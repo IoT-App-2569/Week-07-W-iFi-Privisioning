@@ -110,6 +110,7 @@ W (633) LAB7_1_RESET: --------------------------------------------------
     I -- ไม่ใช่ --> K[เข้าสู่ Provisioning Mode]
 
 ```
+<img width="561" height="1961" alt="Untitled Diagram drawio" src="https://github.com/user-attachments/assets/ba380385-8497-4565-b393-055d077bda53" />
 
 ### ภารกิจที่ 2 ผังสถานะการเปลี่ยนจังหวะไฟ LED 1 (Wi-Fi STA Indicator)
 ให้นักศึกษาวาด State Diagram แสดงการเปลี่ยนสถานะของ **LED 1 (GPIO 2)**:
@@ -122,6 +123,7 @@ stateDiagram-v2
     LED_STA_MODE_CONNECTED --> LED_STA_MODE_DISCONNECTED : เกิด Event WIFI_EVENT_STA_DISCONNECTED (หลุดการเชื่อมต่อ)
 ```
 
+<img width="803" height="252" alt="1-2 drawio" src="https://github.com/user-attachments/assets/999e1d97-4e32-4bf8-8b65-cbc8a9b576a2" />
 
 ---
 
@@ -300,9 +302,9 @@ I (203347) LAB7_2_SOFTAP: [PROV EVENT]: De-initializing Provisioning Manager
   - `IP_EVENT_STA_GOT_IP`
 - สถานะจังหวะการกระพริบของ **LED 3 (GPIO 5)** และ **LED 1 (GPIO 2)** ในแต่ละช่วง
 
-```text
-[พื้นที่สำหรับแนบรูปภาพ Sequence Diagram ที่นักศึกษาเขียนขึ้นด้วย Draw.io / Mermaid / วาดมือ]
-```
+<img width="1146" height="881" alt="02-1 drawio" src="https://github.com/user-attachments/assets/3d05e659-7cd3-442b-ba76-072b36c9f511" />
+
+<img width="1067" height="1535" alt="1787542812305 (1)" src="https://github.com/user-attachments/assets/832ac0f1-6672-49d8-ba36-2d7bbf9d57a8" />
 
 ---
 
