@@ -1,189 +1,135 @@
-#include <errno.h>
 #include <stdio.h>
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "esp_system.h"
+#include "esp_log.h"
 #include "esp_wifi.h"
 #include "esp_event.h"
-#include "esp_log.h"
 #include "nvs_flash.h"
-#include "esp_netif.h"
-#include "lwip/inet.h"
-#include "lwip/sockets.h"
+#include "driver/gpio.h"
+#include "wifi_provisioning/manager.h"
+#include "wifi_provisioning/scheme_ble.h"
 
-static const char *TAG = "LAB_SOFTAP";
+static const char *TAG = "LAB7_4_CUSTOM";
 
-#define EXAMPLE_ESP_WIFI_SSID      "MY_ESP32_AP"
-#define EXAMPLE_ESP_WIFI_PASS      "12345678"
-#define EXAMPLE_MAX_STA_CONN       4
-#define SERVER_PORT                8080
-#define RECV_BUF_SIZE              1024
+#define LED_PIN_WIFI_STA     GPIO_NUM_2    // LED 1: Wi-Fi STA Status
+#define LED_PIN_BLE_PROV     GPIO_NUM_4    // LED 2: BLE Status
+#define PROV_POP_KEY         "abcd1234"   // Proof-of-Possession (PoP)
 
-static void wifi_event_handler(void* arg, esp_event_base_t event_base,
-                               int32_t event_id, void* event_data) {
-    if (event_base == WIFI_EVENT) {
-        if (event_id == WIFI_EVENT_AP_STACONNECTED) {
-            wifi_event_ap_staconnected_t* event = (wifi_event_ap_staconnected_t*) event_data;
-            ESP_LOGI(TAG, "=======================================================");
-            ESP_LOGI(TAG, "[FORENSIC EVENT]: Client Connected to ESP32 SoftAP!");
-            ESP_LOGI(TAG, "  -> Client MAC Address : %02X:%02X:%02X:%02X:%02X:%02X",
-                     event->mac[0], event->mac[1], event->mac[2],
-                     event->mac[3], event->mac[4], event->mac[5]);
-            ESP_LOGI(TAG, "  -> Assigned AID       : %d", event->aid);
-            ESP_LOGI(TAG, "=======================================================");
-        } else if (event_id == WIFI_EVENT_AP_STADISCONNECTED) {
-            wifi_event_ap_stadisconnected_t* event = (wifi_event_ap_stadisconnected_t*) event_data;
-            ESP_LOGW(TAG, "=======================================================");
-            ESP_LOGW(TAG, "[FORENSIC EVENT]: Client Disconnected from ESP32 SoftAP!");
-            ESP_LOGW(TAG, "  -> Client MAC Address : %02X:%02X:%02X:%02X:%02X:%02X",
-                     event->mac[0], event->mac[1], event->mac[2],
-                     event->mac[3], event->mac[4], event->mac[5]);
-            ESP_LOGW(TAG, "  -> Released AID       : %d", event->aid);
-            ESP_LOGW(TAG, "=======================================================");
-        }
-    }
-}
-
-// ------------------------------------------------------------
-// TCP Server Task
-// รอรับ Connection จาก Client (Lab 6-2) บน Port 8080
-// แต่ละ Connection: recv() จนหมด → log สถิติ → close → รอรับใหม่
-// ------------------------------------------------------------
-static void tcp_server_task(void *arg)
+/* Handler สำหรับ Custom Endpoint: "custom-data" */
+esp_err_t custom_prov_data_handler(uint32_t session_id, const uint8_t *inbuf, ssize_t inlen,
+                                   uint8_t **outbuf, ssize_t *outlen, void *priv_data)
 {
-    char rx_buf[RECV_BUF_SIZE];
-
-    // 1) สร้าง Server Socket
-    int server_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
-    if (server_fd < 0) {
-        ESP_LOGE(TAG, "[TCP SERVER]: socket() failed, errno=%d", errno);
-        vTaskDelete(NULL);
-        return;
+    if (inbuf) {
+        ESP_LOGI(TAG, "=================================================");
+        ESP_LOGI(TAG, "[CUSTOM DATA RECEIVED]: %.*s", (int)inlen, (char *)inbuf);
+        ESP_LOGI(TAG, "=================================================");
     }
 
-    // 2) ตั้งค่า SO_REUSEADDR เพื่อให้ bind() ใหม่ได้ทันทีหลัง reset
-    int opt = 1;
-    setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-
-    // 3) bind() ผูก socket กับทุก IP บน Port 8080
-    struct sockaddr_in server_addr = {
-        .sin_family      = AF_INET,
-        .sin_port        = htons(SERVER_PORT),
-        .sin_addr.s_addr = htonl(INADDR_ANY),
-    };
-    if (bind(server_fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) != 0) {
-        ESP_LOGE(TAG, "[TCP SERVER]: bind() failed, errno=%d", errno);
-        close(server_fd);
-        vTaskDelete(NULL);
-        return;
+    // สร้างข้อความตอบกลับแบบไดนามิกบน Heap (Protocomm จะ Free ให้อัตโนมัติ)
+    char response[] = "ACK_FROM_ESP32_SUCCESS";
+    *outbuf = (uint8_t *)strdup(response);
+    if (*outbuf == NULL) {
+        ESP_LOGE(TAG, "Heap out of memory");
+        return ESP_ERR_NO_MEM;
     }
+    *outlen = strlen(response) + 1;
 
-    // 4) listen() เปิดรับ Connection (backlog = 4)
-    if (listen(server_fd, 4) != 0) {
-        ESP_LOGE(TAG, "[TCP SERVER]: listen() failed, errno=%d", errno);
-        close(server_fd);
-        vTaskDelete(NULL);
-        return;
-    }
-
-    ESP_LOGI(TAG, "[TCP SERVER]: Listening on 192.168.4.1:%d", SERVER_PORT);
-
-    int session = 0;
-    while (1) {
-        // 5) accept() รอรับ Client เชื่อมต่อ
-        struct sockaddr_in client_addr;
-        socklen_t client_addr_len = sizeof(client_addr);
-        int client_fd = accept(server_fd, (struct sockaddr *)&client_addr, &client_addr_len);
-        if (client_fd < 0) {
-            ESP_LOGE(TAG, "[TCP SERVER]: accept() failed, errno=%d", errno);
-            continue;
-        }
-
-        session++;
-        char client_ip[16];
-        inet_ntoa_r(client_addr.sin_addr, client_ip, sizeof(client_ip));
-        ESP_LOGI(TAG, "=======================================================");
-        ESP_LOGI(TAG, "[TCP SERVER SESSION %d]: Client connected from %s:%d",
-                 session, client_ip, ntohs(client_addr.sin_port));
-
-        // 6) recv() รับข้อมูลจนกว่า Client จะปิด Socket
-        int total_bytes = 0;
-        int received;
-        while ((received = recv(client_fd, rx_buf, sizeof(rx_buf), 0)) > 0) {
-            total_bytes += received;
-        }
-
-        ESP_LOGI(TAG, "[TCP SERVER SESSION %d]: Transfer complete", session);
-        ESP_LOGI(TAG, "  -> Total Received : %d Bytes", total_bytes);
-        ESP_LOGI(TAG, "=======================================================");
-
-        // 7) ปิด Client Socket แล้ววนรอรับใหม่
-        close(client_fd);
-    }
-
-    close(server_fd);
-    vTaskDelete(NULL);
+    return ESP_OK;
 }
 
-void app_main(void) {
-    ESP_LOGI(TAG, "[FORENSIC]: Call nvs_flash_init()");
-    esp_err_t ret = nvs_flash_init();
-    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-      ESP_ERROR_CHECK(nvs_flash_erase());
-      ret = nvs_flash_init();
+static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
+{
+    if (event_base == PROTOCOMM_SECURITY_SESSION_EVENT) {
+        if (event_id == PROTOCOMM_SECURITY_SESSION_SETUP_OK) {
+            ESP_LOGI(TAG, "--------------------------------------------------");
+            ESP_LOGI(TAG, "[SECURITY SUCCESS]: Valid PoP! Secured Session OK!");
+            ESP_LOGI(TAG, "--------------------------------------------------");
+        } else if (event_id == PROTOCOMM_SECURITY_SESSION_CREDENTIALS_MISMATCH) {
+            ESP_LOGE(TAG, "--------------------------------------------------");
+            ESP_LOGE(TAG, "[SECURITY ALERT]: INVALID PoP / Unauthorized Access!");
+            ESP_LOGE(TAG, "--------------------------------------------------");
+        }
+    } else if (event_base == WIFI_PROV_EVENT) {
+        if (event_id == WIFI_PROV_CRED_SUCCESS) {
+            ESP_LOGI(TAG, "[SUCCESS]: Provisioning Completed!");
+            gpio_set_level(LED_PIN_BLE_PROV, 0);
+        } else if (event_id == WIFI_PROV_END) {
+            wifi_prov_mgr_deinit();
+        }
+    } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
+        ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
+        ESP_LOGI(TAG, "[ONLINE]: IP Address: " IPSTR, IP2STR(&event->ip_info.ip));
+        gpio_set_level(LED_PIN_WIFI_STA, 1);
     }
-    ESP_ERROR_CHECK(ret);
+}
 
-    ESP_LOGI(TAG, "[FORENSIC]: Call esp_netif_init()");
+void app_main(void)
+{
+    gpio_config_t io_conf = {
+        .pin_bit_mask = (1ULL << LED_PIN_WIFI_STA) | (1ULL << LED_PIN_BLE_PROV),
+        .mode = GPIO_MODE_OUTPUT,
+    };
+    gpio_config(&io_conf);
+
+    ESP_ERROR_CHECK(nvs_flash_init());
     ESP_ERROR_CHECK(esp_netif_init());
-
-    ESP_LOGI(TAG, "[FORENSIC]: Call esp_event_loop_create_default()");
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
-    ESP_LOGI(TAG, "[FORENSIC]: Call esp_netif_create_default_wifi_ap()");
-    esp_netif_t *ap_netif = esp_netif_create_default_wifi_ap();
-    ESP_LOGI(TAG, "[FORENSIC]: SoftAP Interface created at %p (Default IP: 192.168.4.1)", ap_netif);
+    ESP_ERROR_CHECK(esp_event_handler_register(WIFI_PROV_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
+    ESP_ERROR_CHECK(esp_event_handler_register(PROTOCOMM_SECURITY_SESSION_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
+    ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler, NULL));
+
+    esp_netif_create_default_wifi_sta();
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    ESP_LOGI(TAG, "[FORENSIC]: Call esp_wifi_init(&cfg)");
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
-    ESP_LOGI(TAG, "[FORENSIC]: Call esp_event_handler_instance_register(WIFI_EVENT)");
-    ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT,
-                                                        ESP_EVENT_ANY_ID,
-                                                        &wifi_event_handler,
-                                                        NULL,
-                                                        NULL));
-
-    wifi_config_t wifi_config = {
-        .ap = {
-            .ssid = "ESP32_AP_0323",
-            .ssid_len = strlen("ESP32_AP_0323"),
-            .channel = 1,
-            .password = "12345678",
-            .max_connection = 4,
-            .authmode = WIFI_AUTH_WPA2_PSK,
-        },
+    wifi_prov_mgr_config_t config = {
+        .scheme = wifi_prov_scheme_ble,
+        .scheme_event_handler = WIFI_PROV_SCHEME_BLE_EVENT_HANDLER_FREE_BTDM
     };
-    if (strlen("ESP32_AP_0323") == 0) {
-        wifi_config.ap.authmode = WIFI_AUTH_OPEN;
+    ESP_ERROR_CHECK(wifi_prov_mgr_init(config));
+
+    bool provisioned = false;
+    ESP_ERROR_CHECK(wifi_prov_mgr_is_provisioned(&provisioned));
+
+    if (!provisioned) {
+        uint8_t mac[6];
+        esp_wifi_get_mac(WIFI_IF_STA, mac);
+        char service_name[16];
+        snprintf(service_name, sizeof(service_name), "PROV_%02X%02X%02X", mac[3], mac[4], mac[5]);
+
+        uint8_t custom_service_uuid[] = {
+            0xb4, 0xdf, 0x5a, 0x1c, 0x3f, 0x6b, 0xf4, 0xbf,
+            0xea, 0x4a, 0x82, 0x03, 0x04, 0x90, 0x1a, 0x02,
+        };
+        wifi_prov_scheme_ble_set_service_uuid(custom_service_uuid);
+
+        // 1. สร้าง Custom Endpoint ก่อนสั่ง Start Provisioning
+        wifi_prov_mgr_endpoint_create("custom-data");
+
+        // 2. เริ่มต้น Provisioning Service
+        wifi_prov_security_t security = WIFI_PROV_SECURITY_1;
+        const char *pop = PROV_POP_KEY;
+        ESP_ERROR_CHECK(wifi_prov_mgr_start_provisioning(security, (const void *)pop, service_name, NULL));
+
+        // 3. ผูกฟังก์ชัน Callback เข้ากับ Endpoint หลัง Start Service
+        wifi_prov_mgr_endpoint_register("custom-data", custom_prov_data_handler, NULL);
+
+        gpio_set_level(LED_PIN_BLE_PROV, 1);
+
+        ESP_LOGI(TAG, "--------------------------------------------------");
+        ESP_LOGI(TAG, "[QR CODE URL]: Click or copy the URL below:");
+        ESP_LOGI(TAG, "https://espressif.github.io/esp-jumpstart/qrcode.html?data=%%7B%%22ver%%22%%3A%%22v1%%22%%2C%%22name%%22%%3A%%22%s%%22%%2C%%22pop%%22%%3A%%22%s%%22%%2C%%22transport%%22%%3A%%22ble%%22%%7D",
+                 service_name, pop);
+        ESP_LOGI(TAG, "Payload JSON: {\"ver\":\"v1\",\"name\":\"%s\",\"pop\":\"%s\",\"transport\":\"ble\"}",
+                 service_name, pop);
+        ESP_LOGI(TAG, "--------------------------------------------------");
+    } else {
+        ESP_LOGI(TAG, "Already provisioned! Starting Wi-Fi Station");
+        wifi_prov_mgr_deinit();
+        ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+        ESP_ERROR_CHECK(esp_wifi_start());
     }
-
-    ESP_LOGI(TAG, "[FORENSIC]: Call esp_wifi_set_mode(WIFI_MODE_AP)");
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
-
-    ESP_LOGI(TAG, "[FORENSIC]: Call esp_wifi_set_config(WIFI_IF_AP, &wifi_config)");
-    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &wifi_config));
-
-    ESP_LOGI(TAG, "[FORENSIC]: Call esp_wifi_start()");
-    ESP_ERROR_CHECK(esp_wifi_start());
-
-    ESP_LOGI(TAG, "==================================================================");
-    ESP_LOGI(TAG, "  ESP32 SoftAP Running! SSID: \"%s\", Channel: %d",
-             "ESP32_AP_0323", wifi_config.ap.channel);
-    ESP_LOGI(TAG, "==================================================================");
-
-    // เปิด TCP Server Task (Stack 4096 bytes, Priority 5)
-    xTaskCreate(tcp_server_task, "tcp_server_task", 4096, NULL, 5, NULL);
 }
