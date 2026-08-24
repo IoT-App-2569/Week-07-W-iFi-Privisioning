@@ -149,6 +149,135 @@ stateDiagram-v2
 # ใบงานที่ 7.2 การคอนฟิก Wi-Fi ผ่าน SoftAP Scheme และการวิเคราะห์ Protocomm Endpoints
 
 ```
+load:0x40080400,len:3860
+--- 0x40080400: _invalid_pc_placeholder at C:/Users/09677/esp/v5.5.1/esp-idf/components/xtensa/xtensa_vectors.S:2235
+entry 0x40080638
+--- 0x40080638: call_start_cpu0 at C:/Users/09677/esp/v5.5.1/esp-idf/components/bootloader/subproject/main/bootloader_start.c:25
+I (29) boot: ESP-IDF v5.5.1-dirty 2nd stage bootloader
+I (29) boot: compile time Aug 24 2026 10:19:50
+I (29) boot: Multicore bootloader
+I (31) boot: chip revision: v3.1
+I (34) boot.esp32: SPI Speed      : 40MHz
+I (38) boot.esp32: SPI Mode       : DIO
+I (41) boot.esp32: SPI Flash Size : 2MB
+I (45) boot: Enabling RNG early entropy source...
+I (49) boot: Partition Table:
+I (52) boot: ## Label            Usage          Type ST Offset   Length
+I (58) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (65) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (71) boot:  2 factory          factory app      00 00 00010000 00100000
+I (78) boot: End of partition table
+I (81) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=22920h (141600) map
+I (137) esp_image: segment 1: paddr=00032948 vaddr=3ffb0000 size=03f3ch ( 16188) load
+I (143) esp_image: segment 2: paddr=0003688c vaddr=40080000 size=0978ch ( 38796) load
+I (158) esp_image: segment 3: paddr=00040020 vaddr=400d0020 size=9f7bch (653244) map
+I (382) esp_image: segment 4: paddr=000df7e4 vaddr=4008978c size=0e800h ( 59392) load
+I (405) esp_image: segment 5: paddr=000edfec vaddr=50000000 size=00020h (    32) load
+I (417) boot: Loaded app from partition at offset 0x10000
+I (417) boot: Disabling RNG early entropy source...
+I (428) cpu_start: Multicore app
+I (436) cpu_start: Pro cpu start user code
+I (436) cpu_start: cpu freq: 160000000 Hz
+I (436) app_init: Application information:
+I (436) app_init: Project name:     lab7_2_softap_provisioning
+I (442) app_init: App version:      6e3a261-dirty
+I (446) app_init: Compile time:     Aug 24 2026 10:18:24
+I (451) app_init: ELF file SHA256:  e7028d632...
+I (456) app_init: ESP-IDF:          v5.5.1-dirty
+I (460) efuse_init: Min chip rev:     v0.0
+I (464) efuse_init: Max chip rev:     v3.99 
+I (468) efuse_init: Chip rev:         v3.1
+I (472) heap_init: Initializing. RAM available for dynamic allocation:
+I (478) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM
+I (483) heap_init: At 3FFB8040 len 00027FC0 (159 KiB): DRAM
+I (488) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM
+I (494) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM
+I (499) heap_init: At 40097F8C len 00008074 (32 KiB): IRAM
+W (506) spi_flash: Detected boya flash chip but using generic driver. For optimal functionality, enable `SPI_FLASH_SUPPORT_BOYA_CHIP` in menuconfig
+I (518) spi_flash: detected chip: generic
+I (521) spi_flash: flash io: dio
+W (524) spi_flash: Detected size(4096k) larger than the size in the binary image header(2048k). Using the size in the binary image header.
+I (537) main_task: Started on CPU0
+I (547) main_task: Calling app_main()
+I (567) wifi:wifi driver task: 3ffc0114, prio:23, stack:6656, core=0
+I (567) wifi:wifi firmware version: 14da9b7
+I (567) wifi:wifi certification version: v7.0
+I (567) wifi:config NVS flash: enabled
+I (567) wifi:config nano formatting: disabled
+I (577) wifi:Init data frame dynamic rx buffer num: 32
+I (577) wifi:Init static rx mgmt buffer num: 5
+I (587) wifi:Init management short buffer num: 32
+I (587) wifi:Init dynamic tx buffer num: 32
+I (587) wifi:Init static rx buffer size: 1600
+I (597) wifi:Init static rx buffer num: 10
+I (597) wifi:Init dynamic rx buffer num: 32
+I (607) wifi_init: rx ba win: 6
+I (607) wifi_init: accept mbox: 6
+I (607) wifi_init: tcpip mbox: 32
+I (607) wifi_init: udp mbox: 6
+I (617) wifi_init: tcp mbox: 6
+I (617) wifi_init: tcp tx win: 5760
+I (617) wifi_init: tcp rx win: 5760
+I (627) wifi_init: tcp mss: 1440
+I (627) wifi_init: WiFi IRAM OP enabled
+I (627) wifi_init: WiFi RX IRAM OP enabled
+I (637) LAB7_2_SOFTAP: Starting SoftAP Provisioning (SSID: PROV_AD6498, PoP: abcd1234)
+I (647) phy_init: phy_version 4861,b71b5ad,Aug  5 2025,11:16:06
+I (727) wifi:mode : sta (88:57:21:ad:64:98)
+I (737) wifi:enable tsf
+I (747) wifi:mode : sta (88:57:21:ad:64:98) + softAP (88:57:21:ad:64:99)
+I (747) wifi:Total power save buffer number: 16
+I (747) wifi:Init max length of beacon: 752/752
+I (747) wifi:Init max length of beacon: 752/752
+I (757) esp_netif_lwip: DHCP server started on interface WIFI_AP_DEF with IP: 192.168.4.1
+I (757) wifi:Total power save buffer number: 16
+I (767) esp_netif_lwip: DHCP server started on interface WIFI_AP_DEF with IP: 192.168.4.1
+I (777) wifi_prov_mgr: Provisioning started with service name : PROV_AD6498 
+I (777) LAB7_2_SOFTAP: [PROV EVENT]: SoftAP Provisioning Started!
+I (787) LAB7_2_SOFTAP: --------------------------------------------------
+I (787) LAB7_2_SOFTAP: [QR CODE URL]: Click or copy the URL below:
+I (797) LAB7_2_SOFTAP: https://espressif.github.io/esp-jumpstart/qrcode.html?data=%7B%22ver%22%3A%22v1%22%2C%22name%22%3A%22PROV_AD6498%22%2C%22pop%22%3A%22abcd1234%22%2C%22transport%22%3A%22softap%22%7D
+I (817) LAB7_2_SOFTAP: Payload JSON: {"ver":"v1","name":"PROV_AD6498","pop":"abcd1234","transport":"softap"}
+I (827) LAB7_2_SOFTAP: --------------------------------------------------
+I (827) main_task: Returned from app_main()
+I (79217) wifi:new:<1,0>, old:<1,1>, ap:<1,0>, sta:<0,0>, prof:1, snd_ch_cfg:0x0
+I (79217) wifi:station: 02:7e:f9:bf:be:c9 join, AID=1, bgn, 20
+I (79217) LAB7_2_SOFTAP: [SOFTAP]: Mobile Phone connected to ESP32 SoftAP!
+I (81867) esp_netif_lwip: DHCP server assigned IP to a client, IP is: 192.168.4.2
+I (83777) wifi:<ba-add>idx:2 (ifx:1, 02:7e:f9:bf:be:c9), tid:0, ssn:0, winSize:64
+W (192077) wifi:Password length matches WPA2 standards, authmode threshold changes from OPEN to WPA2
+I (192107) LAB7_2_SOFTAP: =================================================
+I (192107) LAB7_2_SOFTAP: [CREDENTIALS RECEIVED]:
+I (192107) LAB7_2_SOFTAP:   -> Target SSID     : eem_luna
+I (192107) LAB7_2_SOFTAP:   -> Target Password : 123456789naeem
+I (192117) LAB7_2_SOFTAP: =================================================
+I (195947) wifi:new:<1,0>, old:<1,0>, ap:<1,0>, sta:<1,0>, prof:1, snd_ch_cfg:0x0
+I (195957) wifi:state: init -> auth (0xb0)
+I (196917) wifi:state: auth -> assoc (0x0)
+I (196947) wifi:state: assoc -> run (0x10)
+I (197007) wifi:connected with eem_luna, aid = 1, channel 1, BW20, bssid = be:8e:69:31:c2:c7
+I (197007) wifi:security: WPA3-SAE, phy: bgn, rssi: -46
+I (197017) wifi:pm start, type: 1
+
+I (197027) wifi:dp: 1, bi: 102400, li: 3, scale listen interval from 307200 us to 307200 us
+I (197037) wifi:dp: 2, bi: 102400, li: 4, scale listen interval from 307200 us to 409600 us
+I (197037) wifi:AP's beacon interval = 102400 us, DTIM period = 2
+I (197047) wifi:<ba-add>idx:0 (ifx:0, be:8e:69:31:c2:c7), tid:0, ssn:0, winSize:64
+I (198067) LAB7_2_SOFTAP: =================================================
+I (198067) LAB7_2_SOFTAP: [ONLINE]: Got IP: 10.154.32.169
+I (198067) LAB7_2_SOFTAP: =================================================
+I (198067) esp_netif_handlers: sta ip: 10.154.32.169, mask: 255.255.255.0, gw: 10.154.32.38
+I (198077) wifi_prov_mgr: STA Got IP
+I (198087) LAB7_2_SOFTAP: [SUCCESS]: Provisioning Completed Successfully!
+I (203307) wifi:station: 02:7e:f9:bf:be:c9 leave, AID = 1, reason = 2, bss_flags is 33721443, bss:0x3ffb93f4
+I (203307) wifi:new:<1,0>, old:<1,0>, ap:<1,0>, sta:<1,0>, prof:1, snd_ch_cfg:0x0
+I (203307) wifi:<ba-del>idx:2, tid:0
+I (203327) wifi:new:<1,1>, old:<1,0>, ap:<1,1>, sta:<1,0>, prof:1, snd_ch_cfg:0x0
+I (203327) wifi:mode : sta (88:57:21:ad:64:98)
+I (203327) wifi:ieee80211_send_beacon mode switch cause ap destroyed
+I (203327) wifi_prov_mgr: Provisioning stopped
+W (203337) LAB7_2_SOFTAP: [SOFTAP]: Mobile Phone disconnected from ESP32 SoftAP
+I (203347) LAB7_2_SOFTAP: [PROV EVENT]: De-initializing Provisioning Manager
 
 ```
 ## 5. กิจกรรมถอดรหัสซอร์สโค้ดและเขียนผังงาน (Code Deconstruction & Sequence Flow Assignment)
@@ -179,22 +308,24 @@ stateDiagram-v2
 
 ## 6. ตารางบันทึกผลการทดลอง (Experiment Results)
 
-| รายการตรวจสอบ | ค่าที่บันทึกได้จากการทดลอง |
-| :--- | :--- |
-| **1. ชื่อ SoftAP SSID ของ ESP32** | `PROV_`.............................. |
-| **2. รหัส PoP (Proof of Possession)** | ..................................................... |
-| **3. ข้อความใน QR Code Payload (JSON)** | ..................................................... |
-| **4. พฤติกรรมไฟ LED 3 (GPIO 5) ช่วงรอ vs ช่วงส่งข้อมูล** | ช่วงรอ: .......................................<br/>ช่วงส่ง: ....................................... |
-| **5. IP Address ที่ ESP32 ได้รับจาก Router** | ..................................................... |
-| **6. เวลาที่ใช้ตั้งแต่เริ่มจนจบกระบวนการ (วินาที)** | ..................................................... |
+| รายการตรวจสอบ                                            | ค่าที่บันทึกได้จากการทดลอง                                               |
+| :------------------------------------------------------- | :----------------------------------------------------------------------- |
+| **1. ชื่อ SoftAP SSID ของ ESP32**                        | PROV_AD6498                                                              |
+| **2. รหัส PoP (Proof of Possession)**                    | abcd1234                                                                 |
+| **3. ข้อความใน QR Code Payload (JSON)**                  | {"ver":"v1","name":"PROV_AD6498","pop":"abcd1234","transport":"softap"}` |
+| **4. พฤติกรรมไฟ LED 3 (GPIO 5) ช่วงรอ vs ช่วงส่งข้อมูล** | ช่วงรอ: กระพริบช้า (2Hz)<br/>ช่วงส่ง: ติดค้าง และดับลงเมื่อจบกระบวนการ   |
+| **5. IP Address ที่ ESP32 ได้รับจาก Router**             | 10.154.32.169                                                            |
+| **6. เวลาที่ใช้ตั้งแต่เริ่มจนจบกระบวนการ (วินาที)**      | ประมาณ 120-125 วินาที                                                    |
 
 ---
 
 ## 7. คำถามท้ายการทดลอง (Post-Lab Questions)
 1. ในโหมด SoftAP Scheme สมาร์ตโฟนส่งข้อมูลหา ESP32 ผ่านโปรโตคอลและ IP Address ใด?
+		**โปรโตคอลและ IP Address ของ SoftAP:** ส่งข้อมูลผ่านโปรโตคอล **HTTP REST-like (over TCP)** โดยใช้ IP Address หลักของ ESP32 คือ **`192.168.4.1`** (และแจก IP ให้มือถือเป็น `192.168.4.2`)
 2. หากผู้ใช้ป้อนรหัสผ่าน Wi-Fi ผิดในแอปมือถือ จะเกิด Event ใดขึ้นบน ESP32 (`WIFI_PROV_CRED_FAIL` หรือไม่) และ ESP32 มีพฤติกรรมอย่างไร?
+		**กรณีป้อนรหัสผ่าน Wi-Fi ผิด:** จะเกิด Event **`WIFI_PROV_CRED_FAIL`** บน ESP32 โดย ESP32 จะแจ้งสถานะล้มเหลวกลับไปยังแอป และยังคงเปิด SoftAP ค้างไว้เพื่อรอให้ผู้ใช้ป้อน Credentials ใหม่อีกครั้ง (ไม่สลับไป Station Mode)
 3. ทำไมผู้ผลิต IoT ส่วนใหญ่จึงมองว่ากระบวนการเชื่อมต่อแบบ SoftAP มีขั้นตอนที่ยุ่งยากสำหรับผู้ใช้ทั่วไปเมื่อเทียบกับ BLE?
-
+		**หตุผลที่ SoftAP ยุ่งยากกว่า BLE:** เพราะ SoftAP บังคับให้ผู้ใช้ต้อง **กดสลับ Wi-Fi บนมือถือ** ออกจาก Wi-Fi บ้านเพื่อมาเกาะ Wi-Fi ของ ESP32 ก่อน (ส่งผลให้เน็ตมือถือหลุดชั่วคราว) ต่างจาก BLE ที่มือถือสามารถค้นหา จับคู่ และส่งข้อมูลผ่านบลูทูธได้ทันทีโดยไม่ต้องสลับเครือข่าย Wi-Fi
 ---
 # ใบงานที่ 7.3 การคอนฟิก Wi-Fi ผ่าน BLE Scheme และการสืบสวน GATT Services (BLE Forensics)
 ```
