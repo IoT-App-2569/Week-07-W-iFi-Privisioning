@@ -178,6 +178,7 @@ void app_main(void)
 ```text
 [พื้นที่สำหรับแนบรูปภาพ Flowchart ที่นักศึกษาเขียนขึ้นด้วย Draw.io / Mermaid / วาดมือ]
 ```
+<img width="667" height="725" alt="image" src="https://github.com/user-attachments/assets/4f1dd03a-a5d5-487f-9b3e-8502a1e6f1ff" />
 
 ### ภารกิจที่ 2 ผังสถานะการเปลี่ยนจังหวะไฟ LED 1 (Wi-Fi STA Indicator)
 ให้นักศึกษาวาด State Diagram แสดงการเปลี่ยนสถานะของ **LED 1 (GPIO 2)**:
