@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 3.5)
-
+cmake_minimum_required(VERSION 3.16)
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
-
-project(wifi_softap_tracking)
+project(lab7_2_softap_provisioning)

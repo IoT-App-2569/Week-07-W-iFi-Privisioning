@@ -1,20 +1,40 @@
-# ESP-IDF specific
+# ==========================================
+# ESP-IDF Build & Configuration Outputs
+# ==========================================
 build/
+sdkconfig
 sdkconfig.old
 dependencies.lock
 managed_components/
+components/*_cmp/
 
-# Python Virtual Environments (ถ้ามี)
+# ==========================================
+# Python Virtual Environments & Cache
+# ==========================================
 .env/
 venv/
 env/
+ENV/
 __pycache__/
+*.py[cod]
+*$py.class
 
-# Visual Studio Code
+# ==========================================
+# IDEs and Editors (VS Code, Eclipse, etc.)
+# ==========================================
 .vscode/
 *.code-workspace
+.idea/
+*.suo
+*.sln
+*.sw?
+*.user
+*.userprefs
+*.pidb
 
-# OS generated files (สำหรับคนใช้ Mac/Windows)
+# ==========================================
+# OS Generated Files
+# ==========================================
 .DS_Store
 .DS_Store?
 ._*
@@ -22,9 +42,15 @@ __pycache__/
 .Trashes
 ehthumbs.db
 Thumbs.db
+desktop.ini
 
-# Other IDEs/Editors
-.idea/
-*.suo
-*.sln
-*.sw?
+# ==========================================
+# Compiled Object / Binary Files
+# ==========================================
+*.o
+*.a
+*.elf
+*.bin
+*.hex
+*.map
+*.d
