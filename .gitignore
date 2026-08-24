@@ -1,56 +1,25 @@
-# ==========================================
 # ESP-IDF Build & Configuration Outputs
-# ==========================================
 build/
 sdkconfig
 sdkconfig.old
 dependencies.lock
 managed_components/
-components/*_cmp/
 
-# ==========================================
 # Python Virtual Environments & Cache
-# ==========================================
 .env/
 venv/
 env/
-ENV/
 __pycache__/
-*.py[cod]
-*$py.class
 
-# ==========================================
-# IDEs and Editors (VS Code, Eclipse, etc.)
-# ==========================================
+# IDEs and Editors
 .vscode/
 *.code-workspace
 .idea/
 *.suo
 *.sln
 *.sw?
-*.user
-*.userprefs
-*.pidb
 
-# ==========================================
 # OS Generated Files
-# ==========================================
 .DS_Store
-.DS_Store?
 ._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
 Thumbs.db
-desktop.ini
-
-# ==========================================
-# Compiled Object / Binary Files
-# ==========================================
-*.o
-*.a
-*.elf
-*.bin
-*.hex
-*.map
-*.d
