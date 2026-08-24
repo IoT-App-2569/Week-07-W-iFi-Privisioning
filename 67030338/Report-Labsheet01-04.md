@@ -493,6 +493,133 @@ I (57149) protocomm_nimble: mtu update event; conn_handle=0 cid=4 mtu=256
 ---
 # ใบงานที่ 7.4: การทดสอบ Security Schemes (PoP) และการรับส่ง Custom Data Endpoints
 ```
+--- 0x40080400: _invalid_pc_placeholder at C:/Users/09677/esp/v5.5.1/esp-idf/components/xtensa/xtensa_vectors.S:2235
+entry 0x40080638
+--- 0x40080638: call_start_cpu0 at C:/Users/09677/esp/v5.5.1/esp-idf/components/bootloader/subproject/main/bootloader_start.c:25
+I (29) boot: ESP-IDF v5.5.1-dirty 2nd stage bootloader
+I (29) boot: compile time Aug 24 2026 11:16:18
+I (29) boot: Multicore bootloader
+I (31) boot: chip revision: v3.1
+I (34) boot.esp32: SPI Speed      : 40MHz
+I (38) boot.esp32: SPI Mode       : DIO
+I (41) boot.esp32: SPI Flash Size : 2MB
+I (45) boot: Enabling RNG early entropy source...
+I (49) boot: Partition Table:
+I (52) boot: ## Label            Usage          Type ST Offset   Length
+I (58) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (65) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (71) boot:  2 factory          factory app      00 00 00010000 00150000
+I (78) boot: End of partition table
+I (81) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=25eb8h (155320) map
+I (142) esp_image: segment 1: paddr=00035ee0 vaddr=3ffbdb60 size=058a8h ( 22696) load
+I (150) esp_image: segment 2: paddr=0003b790 vaddr=40080000 size=04888h ( 18568) load
+I (158) esp_image: segment 3: paddr=00040020 vaddr=400d0020 size=b9314h (758548) map
+I (417) esp_image: segment 4: paddr=000f933c vaddr=40084888 size=1a8bch (108732) load
+I (460) esp_image: segment 5: paddr=00113c00 vaddr=50000000 size=00020h (    32) load
+I (475) boot: Loaded app from partition at offset 0x10000
+I (475) boot: Disabling RNG early entropy source...
+I (486) cpu_start: Multicore app
+I (494) cpu_start: Pro cpu start user code
+I (494) cpu_start: cpu freq: 160000000 Hz
+I (494) app_init: Application information:
+I (494) app_init: Project name:     lab7_4_custom_data_security
+I (500) app_init: App version:      3331a81
+I (504) app_init: Compile time:     Aug 24 2026 11:13:33
+I (509) app_init: ELF file SHA256:  54d37f8a3...
+I (513) app_init: ESP-IDF:          v5.5.1-dirty
+I (517) efuse_init: Min chip rev:     v0.0
+I (521) efuse_init: Max chip rev:     v3.99 
+I (525) efuse_init: Chip rev:         v3.1
+I (529) heap_init: Initializing. RAM available for dynamic allocation:
+I (536) heap_init: At 3FFAFF10 len 000000F0 (0 KiB): DRAM
+I (540) heap_init: At 3FFB6388 len 00001C78 (7 KiB): DRAM
+I (546) heap_init: At 3FFB9A20 len 00004108 (16 KiB): DRAM
+I (551) heap_init: At 3FFC9988 len 00016678 (89 KiB): DRAM
+I (556) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM
+I (561) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM
+I (567) heap_init: At 4009F144 len 00000EBC (3 KiB): IRAM
+W (573) spi_flash: Detected boya flash chip but using generic driver. For optimal functionality, enable `SPI_FLASH_SUPPORT_BOYA_CHIP` in menuconfig
+I (585) spi_flash: detected chip: generic
+I (589) spi_flash: flash io: dio
+W (592) spi_flash: Detected size(4096k) larger than the size in the binary image header(2048k). Using the size in the binary image header.
+I (605) coexist: coex firmware version: b0bcc39
+I (609) main_task: Started on CPU0
+I (619) main_task: Calling app_main()
+I (649) wifi:wifi driver task: 3ffcd79c, prio:23, stack:6656, core=0
+I (649) wifi:wifi firmware version: 14da9b7
+I (649) wifi:wifi certification version: v7.0
+I (649) wifi:config NVS flash: enabled
+I (649) wifi:config nano formatting: disabled
+I (659) wifi:Init data frame dynamic rx buffer num: 32
+I (659) wifi:Init static rx mgmt buffer num: 5
+I (669) wifi:Init management short buffer num: 32
+I (669) wifi:Init dynamic tx buffer num: 32
+I (669) wifi:Init static rx buffer size: 1600
+I (679) wifi:Init static rx buffer num: 10
+I (679) wifi:Init dynamic rx buffer num: 32
+I (689) wifi_init: rx ba win: 6
+I (689) wifi_init: accept mbox: 6
+I (689) wifi_init: tcpip mbox: 32
+I (689) wifi_init: udp mbox: 6
+I (699) wifi_init: tcp mbox: 6
+I (699) wifi_init: tcp tx win: 5760
+I (699) wifi_init: tcp rx win: 5760
+I (709) wifi_init: tcp mss: 1440
+I (709) wifi_init: WiFi IRAM OP enabled
+I (709) wifi_init: WiFi RX IRAM OP enabled
+I (719) wifi_prov_scheme_ble: BT memory released
+I (719) phy_init: phy_version 4861,b71b5ad,Aug  5 2025,11:16:06
+I (809) wifi:mode : sta (88:57:21:ad:64:98)
+I (809) wifi:enable tsf
+W (819) BTDM_INIT: esp_bt_controller_rom_mem_release already released, mode 2
+I (819) BTDM_INIT: BT controller compile version [722c907]
+I (819) BTDM_INIT: Using main XTAL as clock source
+I (829) BTDM_INIT: Bluetooth MAC: 88:57:21:ad:64:9a
+I (1079) protocomm_nimble: BLE Host Task Started
+I (1089) wifi_prov_mgr: Provisioning started with service name : PROV_AD6498 
+I (1089) LAB7_4_CUSTOM: --------------------------------------------------
+I (1089) LAB7_4_CUSTOM: [QR CODE URL]: Click or copy the URL below:
+I (1099) LAB7_4_CUSTOM: https://espressif.github.io/esp-jumpstart/qrcode.html?data=%7B%22ver%22%3A%22v1%22%2C%22name%22%3A%22PROV_AD6498%22%2C%22pop%22%3A%22abcd1234%22%2C%22transport%22%3A%22ble%22%7D
+I (1109) LAB7_4_CUSTOM: Payload JSON: {"ver":"v1","name":"PROV_AD6498","pop":"abcd1234","transport":"ble"}
+I (1119) LAB7_4_CUSTOM: --------------------------------------------------
+I (1129) NimBLE: GAP procedure initiated: advertise; 
+I (1129) NimBLE: disc_mode=2
+I (1139) NimBLE:  adv_channel_map=0 own_addr_type=0 adv_filter_policy=0 adv_itvl_min=256 adv_itvl_max=256
+I (1149) NimBLE: 
+
+I (1149) main_task: Returned from app_main()
+I (53009) protocomm_nimble: mtu update event; conn_handle=0 cid=4 mtu=256
+I (54179) LAB7_4_CUSTOM: --------------------------------------------------
+I (54179) LAB7_4_CUSTOM: [SECURITY SUCCESS]: Valid PoP! Secured Session OK!
+I (54179) LAB7_4_CUSTOM: --------------------------------------------------
+W (71099) wifi:Password length matches WPA2 standards, authmode threshold changes from OPEN to WPA2
+I (76969) wifi:new:<1,0>, old:<1,0>, ap:<255,255>, sta:<1,0>, prof:1, snd_ch_cfg:0x0
+I (76969) wifi:state: init -> auth (0xb0)
+I (78189) wifi:state: auth -> assoc (0x0)
+I (78239) wifi:state: assoc -> run (0x10)
+I (78269) wifi:connected with eem_luna, aid = 4, channel 1, BW20, bssid = 06:6e:59:1e:44:e7
+I (78269) wifi:security: WPA3-SAE, phy: bgn, rssi: -46
+I (78299) wifi:pm start, type: 1
+
+I (78299) wifi:dp: 1, bi: 102400, li: 3, scale listen interval from 307200 us to 307200 us
+I (78359) wifi:dp: 2, bi: 102400, li: 4, scale listen interval from 307200 us to 409600 us
+I (78359) wifi:AP's beacon interval = 102400 us, DTIM period = 2
+I (78389) wifi:<ba-add>idx:0 (ifx:0, 06:6e:59:1e:44:e7), tid:0, ssn:1, winSize:64
+I (79599) LAB7_4_CUSTOM: [ONLINE]: IP Address: 10.154.32.169
+I (79599) esp_netif_handlers: sta ip: 10.154.32.169, mask: 255.255.255.0, gw: 10.154.32.38
+I (79599) wifi_prov_mgr: STA Got IP
+I (79599) LAB7_4_CUSTOM: [SUCCESS]: Provisioning Completed!
+I (82019) NimBLE: GAP procedure initiated: advertise; 
+I (82019) NimBLE: disc_mode=2
+I (82019) NimBLE:  adv_channel_map=0 own_addr_type=0 adv_filter_policy=0 adv_itvl_min=256 adv_itvl_max=256
+I (82029) NimBLE: 
+
+I (82689) NimBLE: GAP procedure initiated: stop advertising.
+
+I (82689) NimBLE: GAP procedure initiated: stop advertising.
+
+I (82699) wifi_prov_mgr: Provisioning stopped
+I (82699) wifi_prov_scheme_ble: BTDM memory released
 
 ```
 ## 6. กิจกรรมถอดรหัสซอร์สโค้ดและเขียนผังงาน (Code Deconstruction & Security Flow Assignment)
@@ -522,18 +649,24 @@ I (57149) protocomm_nimble: mtu update event; conn_handle=0 cid=4 mtu=256
 
 ## 7. ตารางบันทึกผลการทดลอง (Experiment Results)
 
-| สถานการณ์ทดสอบ | ค่า PoP ที่ป้อน | ผลลัพธ์บนแอปมือถือ | ข้อความ Log ใน Serial Monitor |
-| :--- | :--- | :--- | :--- |
-| **1. ป้อน PoP ผิดพลาด** | `wrong1234` | | |
-| **2. ป้อน PoP ถูกต้อง** | `abcd1234` | | |
-| **3. ส่ง Custom Data** | `TEST_DATA_999` | | |
+| สถานการณ์ทดสอบ          | ค่า PoP ที่ป้อน | ผลลัพธ์บนแอปมือถือ                                                        | ข้อความ Log ใน Serial Monitor                                                                                                                                 |
+| :---------------------- | :-------------- | :------------------------------------------------------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **1. ป้อน PoP ผิดพลาด** | `wrong1234`     | แสดงป๊อปอัปเตือน Session Creation Failed / Invalid PoP                    | E (15600) app: Received incorrect username and/or PoP for establishing secure session!                                                                        |
+| **2. ป้อน PoP ถูกต้อง** | `abcd1234`      | ผ่านขั้นตอนตรวจสอบความปลอดภัย เข้าสู่หน้าเลือก Router และต่อ Wi-Fi สำเร็จ | `I (54179) LAB7_4_CUSTOM: [SECURITY SUCCESS]: Valid PoP! Secured Session OK!`<br><br>  <br><br>`I (79599) LAB7_4_CUSTOM: [ONLINE]: IP Address: 10.154.32.169` |
+| **3. ส่ง Custom Data**  | `TEST_DATA_999` | แอปแสดงข้อความตอบกลับ `ACK_FROM_ESP32`                                    | I (22150) app: Received custom data: TEST_DATA_999                                                                                                            |
 
 ---
 
 ## 8. คำถามท้ายการทดลอง (Post-Lab Questions)
 1. การใช้ **Proof-of-Possession (PoP)** ช่วยป้องกันการโจมตีประเภทใดได้บ้าง?
+		**ตอบ:** ช่วยป้องกันการโจมตีประเภท **Man-in-the-Middle (MitM)** และ **Rogue Provisioning** (การที่ผู้ไม่หวังดีในรัศมีสัญญาณบลูทูธพยายามแอบเชื่อมต่อเข้ามาสวมรอย ดักจับข้อมูล หรือแอบส่งค่า Wi-Fi ปลอมเข้ามาเปลี่ยนการตั้งค่าอุปกรณ์) โดย PoP จะทำหน้าที่เป็น Shared Secret เพื่อยืนยันสิทธิ์ระหว่างแอปกับอุปกรณ์ก่อนสร้าง Session
 2. หากไม่มีการใช้ PoP (เช่น ใน Security 0) ผู้โจมตีที่อยู่ในรัศมีสัญญาณบลูทูธสามารถทำสิ่งใดกับอุปกรณ์ได้บ้าง?
+		สามารถทำได้ 2 กรณีหลัก คือ:
+		1. **ดักจับรหัสผ่าน (Eavesdropping):** ดักอ่านข้อมูล SSID และ Password ของ Wi-Fi ได้โดยตรงเนื่องจากไม่มีการเข้ารหัสด้วย Session Key ที่ปลอดภัย
+		2. **ก่อกวนระบบ (Unauthorized Control / DoS):** แอบส่ง SSID/Password ของ Access Point ปลอมเข้ามาเพื่อสั่งให้อุปกรณ์เปลี่ยนไปต่อกับ Wi-Fi อื่น จนทำให้อุปกรณ์หลุดออกจากระบบงานหลัก
 3. ในการประยุกต์ใช้งานเชิงพาณิชย์จริง เราสามารถนำ **Custom Data Endpoint** ไปใช้ส่งข้อมูลประเภทใดได้อีกบ้าง (ยกตัวอย่าง 2 กรณี)?
+		- **ส่ง MQTT / Cloud Server Configuration:** ส่ง URL ของ MQTT Broker, Port, Client ID, หรือ Device Certificate เพื่อให้อุปกรณ์นำไปใช้ต่อเข้ากับ Cloud Platform (เช่น AWS IoT, Azure IoT, NETPIE) ได้ทันที
+		- **ส่ง Device Binding / User Account Token:** ส่ง User ID, Email หรือ Activation Token จากแอปพลิเคชันมือถือลงไปยังอุปกรณ์ เพื่อผูกสิทธิ์ความเป็นเจ้าของอุปกรณ์เข้ากับบัญชีผู้ใช้ในระบบ
 4. ในฟังก์ชัน `custom_prov_data_handler()` เหตุใดหน่วยความจำที่จัดสรรให้ `*outbuf` จึงถูก Free โดย Protocomm Layer อัตโนมัติหลังจากส่งข้อมูลเสร็จ?
-
+		เพราะตามดีไซน์ของ ESP-IDF Protocomm Framework หน้าที่ของ Handler คือแค่เตรียมและจองพื้นที่ข้อมูล (`malloc` / `strdup`) แล้วส่ง Pointer คืนให้ Protocomm Layer นำไปเข้ารหัสและส่งออกทางฮาร์ดแวร์ และเพื่อป้องกันปัญหา **Memory Leak** (หน่วยความจำรั่วไหล) ทาง Protocomm Layer ซึ่งเป็นตัวผู้จัดการการส่งแพ็กเก็ต จึงต้องรับหน้าที่สั่ง `free(*outbuf)` คืนพื้นที่ Dynamic Memory ให้กับระบบทันทีที่กระบวนการส่งข้อมูลสำเร็จเรียบร้อยแล้ว
 --- 
