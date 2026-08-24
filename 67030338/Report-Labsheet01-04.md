@@ -633,6 +633,7 @@ I (82699) wifi_prov_scheme_ble: BTDM memory released
 3. จุดแยกทางเลือก (Branching):
    - หาก PoP ไม่ตรง $\rightarrow$ Trigger Event `PROTOCOMM_SECURITY_SESSION_CREDENTIALS_MISMATCH` และปฏิเสธการเชื่อมต่อ
    - หาก PoP ถูกต้อง $\rightarrow$ Trigger Event `PROTOCOMM_SECURITY_SESSION_SETUP_OK` และสร้าง AES Session Key สำเร็จ
+<img width="1145" height="1074" alt="041 drawio" src="https://github.com/user-attachments/assets/912d7b55-9321-4686-a339-42bdf5cceb29" />
 
 ### ภารกิจที่ 2: ผังการรับส่งข้อมูลผ่าน Custom Endpoint (Custom Data Handler Flow)
 ให้นักศึกษาวาด Sequence / Data Flow ของฟังก์ชัน `custom_prov_data_handler()`:
@@ -641,9 +642,8 @@ I (82699) wifi_prov_scheme_ble: BTDM memory released
 3. การจัดสรรหน่วยความจำแบบไดนามิกด้วย `strdup()` ให้กับ `*outbuf`
 4. ทำไมตัวแปร `*outbuf` จึงต้องจัดสรรใน Heap Memory (ทำไมจึงใช้ตัวแปร Local Static Array ธรรมดาไม่ได้)?
 
-```text
-[พื้นที่สำหรับแนบรูปภาพ Diagram ที่นักศึกษาเขียนขึ้นด้วย Draw.io / Mermaid / วาดมือ]
-```
+<img width="1198" height="655" alt="042 drawio" src="https://github.com/user-attachments/assets/68ae5cd2-28d8-4b5b-a0a3-ff260b39e7d7" />
+
 
 ---
 
