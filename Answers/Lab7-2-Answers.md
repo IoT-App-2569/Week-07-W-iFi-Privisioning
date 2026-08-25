@@ -25,6 +25,10 @@
 
 ### 1.3 ลำดับ Event ที่เกิดขึ้นบน Serial Monitor
 
+<img width="959" height="506" alt="Screenshot 2026-08-25 112252" src="https://github.com/user-attachments/assets/8597f240-0484-412b-9515-a3701765593f" />
+
+<img width="959" height="504" alt="Screenshot 2026-08-25 113333" src="https://github.com/user-attachments/assets/44a0b262-acc1-4498-9e46-bc43358828aa" />
+
 ```
 I (647) LAB7_2_SOFTAP: Starting SoftAP Provisioning (SSID: PROV_0E01D0, PoP: abcd1234)
 I (747) wifi:mode : sta (14:33:5c:0e:01:d0) + softAP (14:33:5c:0e:01:d1)
