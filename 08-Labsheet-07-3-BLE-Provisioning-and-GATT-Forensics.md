@@ -131,11 +131,11 @@ I (26120) app: Connected with IP Address: 192.168.1.155
 
 | รายการตรวจสอบ | ผลการทดลอง / ข้อมูลที่สังเกตได้ |
 | :--- | :--- |
-| **1. BLE Device Name ที่สแกนเจอ** | `PROV_`.............................. |
-| **2. Primary Service UUID (128-bit)** | ..................................................... |
-| **3. Characteristic Endpoint ที่พบ (0x2901)** | 1. ..................................................<br/>2. ..................................................<br/>3. .................................................. |
-| **4. พฤติกรรมไฟ LED 2 (GPIO 4) ช่วงรอ vs ช่วงต่อ BLE** | ช่วงรอ: .......................................<br/>ช่วงต่อ: ....................................... |
-| **5. พฤติกรรมเมื่อต่อ Wi-Fi สำเร็จ** | มี Log คืนหน่วยความจำ Bluetooth หรือไม่? (มี / ไม่มี) |
+| **1. BLE Device Name ที่สแกนเจอ** | `PROV_0E01D0` (MAC `14:33:5C:0E:01:D2`) |
+| **2. Primary Service UUID (128-bit)** | `021a9004-0382-4aea-bff4-6b3f1c5adfb4` (Custom Service ตามที่โค้ดกำหนดผ่าน `network_prov_scheme_ble_set_service_uuid()`) |
+| **3. Characteristic Endpoint ที่พบ (0x2901)** | 1. `021aff4f-...` → `prov-ctrl`<br/>2. `021aff50-...` → `prov-scan`<br/>3. `021aff51-...` → `prov-session`<br/>4. `021aff52-...` → `prov-config`<br/>5. `021aff53-...` → `proto-ver`<br/>*(ยืนยันจาก nRF Connect และตรวจซ้ำกับ `manager.c` บรรทัด 1935–1959 ในซอร์สโค้ดจริง — ดูหมายเหตุใน [Answers/Lab7-3-Answers.md](../Answers/Lab7-3-Answers.md) ตาราง 1.2 เรื่องความคลาดเคลื่อนกับชื่อ `custom-data` ที่ระบุไว้ในใบงานนี้ข้อ 3)* |
+| **4. พฤติกรรมไฟ LED 2 (GPIO 4) ช่วงรอ vs ช่วงต่อ BLE** | ช่วงรอ (`PROTOCOMM_TRANSPORT_BLE_CONNECTED` ยังไม่เกิด): กระพริบช้า (event `NETWORK_PROV_START` สั่งติด LED)<br/>ช่วงต่อ (`WIFI_PROV_CRED_SUCCESS`): ไฟดับ — *ยังไม่ได้สังเกตด้วยตาจริงบนบอร์ด (log/BLE screenshot ไม่มีข้อมูล LED โดยตรง) ค่าที่ระบุนี้อ้างอิงจาก logic ในโค้ด `main.c` เท่านั้น* |
+| **5. พฤติกรรมเมื่อต่อ Wi-Fi สำเร็จ** | **มี** — ยืนยันจาก log จริง: `network_prov_mgr: Provisioning stopped` ตามด้วย `network_prov_scheme_ble: BTDM memory released` ห่างจาก `[SUCCESS]: BLE Provisioning Successful!` ประมาณ 31 วินาที |
 
 ---
 

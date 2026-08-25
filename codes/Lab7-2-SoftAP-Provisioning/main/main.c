@@ -16,22 +16,6 @@ static const char *TAG = "LAB7_2_SOFTAP";
 #define LED_PIN_SOFTAP_PROV  GPIO_NUM_5    // LED 3: SoftAP Provisioning Status
 #define PROV_POP_KEY         "abcd1234"   // Proof-of-Possession (PoP)
 
-static void led_task(void *pvParameters)
-{
-    gpio_config_t io_conf = {
-        .pin_bit_mask = (1ULL << LED_PIN_WIFI_STA) | (1ULL << LED_PIN_SOFTAP_PROV),
-        .mode = GPIO_MODE_OUTPUT,
-    };
-    gpio_config(&io_conf);
-
-    uint32_t tick = 0;
-    while (1) {
-        // จัดการ LED ตามสถานะในตัวแปรระบบ
-        tick++;
-        vTaskDelay(pdMS_TO_TICKS(100));
-    }
-}
-
 static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
 {
     if (event_base == NETWORK_PROV_EVENT) {
@@ -80,6 +64,12 @@ static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_
 
 void app_main(void)
 {
+    gpio_config_t io_conf = {
+        .pin_bit_mask = (1ULL << LED_PIN_WIFI_STA) | (1ULL << LED_PIN_SOFTAP_PROV),
+        .mode = GPIO_MODE_OUTPUT,
+    };
+    gpio_config(&io_conf);
+
     ESP_ERROR_CHECK(nvs_flash_init());
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
