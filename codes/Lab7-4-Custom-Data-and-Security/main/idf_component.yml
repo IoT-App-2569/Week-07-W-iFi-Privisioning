@@ -1,0 +1,7 @@
+## Managed component dependencies
+## ใน ESP-IDF v6.x คอมโพเนนต์ wifi_provisioning ถูกถอดออกจาก IDF core
+## และย้ายไปเป็น Managed Component ชื่อ espressif/network_provisioning
+## idf.py จะดาวน์โหลดให้อัตโนมัติตอน build ครั้งแรก (ต้องต่ออินเทอร์เน็ต)
+dependencies:
+  idf: ">=6.0"
+  espressif/network_provisioning: "^1.2.4"

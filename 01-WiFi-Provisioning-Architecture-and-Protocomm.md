@@ -28,10 +28,10 @@ graph TD
     subgraph App_Layer["Application Layer"]
         A1["app_main()"]
         A2["Custom Data Handler (Endpoints)"]
-        A3["Event Handler (WIFI_PROV_EVENT)"]
+        A3["Event Handler (NETWORK_PROV_EVENT)"]
     end
 
-    subgraph Prov_Mgr["Wi-Fi Provisioning Manager (wifi_prov_mgr)"]
+    subgraph Prov_Mgr["Network Provisioning Manager (network_prov_mgr)"]
         B1["State Machine Engine"]
         B2["Security Engine (Protocomm Security)"]
         B3["Protobuf Serialization (Nanopb)"]
@@ -55,7 +55,7 @@ graph TD
 ```
 
 ### องค์ประกอบสำคัญ:
-1. **`wifi_prov_mgr` (Provisioning Manager)** ควบคุม State Machine ตั้งแต่เริ่มต้น จนกระทั่งเชื่อมต่อ Wi-Fi สำเร็จ และทำการคืนหน่วยความจำ (De-initialization)
+1. **`network_prov_mgr` (Provisioning Manager)** ควบคุม State Machine ตั้งแต่เริ่มต้น จนกระทั่งเชื่อมต่อ Wi-Fi สำเร็จ และทำการคืนหน่วยความจำ (De-initialization)
 2. **`protocomm` (Protocol Communication)** ชั้นการสื่อสารแบบนามธรรม (Transport Agnostic) ที่ทำหน้าที่จัดการดังต่อไปนี้
    - **Endpoint Registration** (การสร้างช่องทางรับส่งข้อมูล)
    - **Security Handshake & Encryption** (การเข้ารหัสข้อมูล)
@@ -85,22 +85,22 @@ ESP-IDF จัดการสถานะของ Provisioning ผ่าน Sta
 ```mermaid
 stateDiagram-v2
     [*] --> Check_Provisioned: บูตเครื่อง (app_main)
-    Check_Provisioned --> Already_Provisioned: wifi_prov_mgr_is_provisioned() == true
-    Check_Provisioned --> Start_Provisioning: wifi_prov_mgr_is_provisioned() == false
+    Check_Provisioned --> Already_Provisioned: network_prov_mgr_is_wifi_provisioned() == true
+    Check_Provisioned --> Start_Provisioning: network_prov_mgr_is_wifi_provisioned() == false
 
     Already_Provisioned --> Start_STA: wifi_init_sta()
     Start_STA --> Connect_AP: esp_wifi_connect()
     Connect_AP --> Got_IP: IP_EVENT_STA_GOT_IP
 
-    Start_Provisioning --> Provisioning_Active: WIFI_PROV_START (เปิด BLE หรือ SoftAP)
+    Start_Provisioning --> Provisioning_Active: NETWORK_PROV_START (เปิด BLE หรือ SoftAP)
     Provisioning_Active --> Session_Established: แลกเปลี่ยนคีย์สำเร็จ (Security Handshake)
-    Session_Established --> Credential_Received: WIFI_PROV_CRED_RECV (รับ SSID/Pass)
+    Session_Established --> Credential_Received: NETWORK_PROV_WIFI_CRED_RECV (รับ SSID/Pass)
     Credential_Received --> Test_Connecting: ทดลองต่อ Wi-Fi AP
-    Test_Connecting --> Provisioning_Success: WIFI_PROV_CRED_SUCCESS (ต่อสำเร็จ ได้ IP)
-    Test_Connecting --> Provisioning_Fail: WIFI_PROV_CRED_FAIL (รหัสผิด หรือ ไม่พบ AP)
+    Test_Connecting --> Provisioning_Success: NETWORK_PROV_WIFI_CRED_SUCCESS (ต่อสำเร็จ ได้ IP)
+    Test_Connecting --> Provisioning_Fail: NETWORK_PROV_WIFI_CRED_FAIL (รหัสผิด หรือ ไม่พบ AP)
     
     Provisioning_Fail --> Provisioning_Active: Retry ตามจำนวนรอบที่ตั้งไว้
-    Provisioning_Success --> Deinit_Manager: WIFI_PROV_END (ปล่อยหน่วยความจำ BLE/AP)
+    Provisioning_Success --> Deinit_Manager: NETWORK_PROV_END (ปล่อยหน่วยความจำ BLE/AP)
     Deinit_Manager --> Got_IP: ทำงานในโหมด Station ต่อเนื่อง
     Got_IP --> [*]
 ```
@@ -110,11 +110,11 @@ stateDiagram-v2
 
 | Event name               | ความสำคัญ                                                                 |
 | ------------------------ | ------------------------------------------------------------------------- |
-| `WIFI_PROV_START`        | ระบบ Provisioning เริ่มต้น กระจายสัญญาณ BLE หรือ SoftAP                   |
-| `WIFI_PROV_CRED_RECV`    | บอกว่าได้รับข้อมูล SSID/Password จากสมาร์ตโฟนแล้ว                         |
-| `WIFI_PROV_CRED_FAIL`    | ข้อมูล Wi-Fi ที่ส่งมาเชื่อมต่อไม่สำเร็จ (รหัสผ่านผิด หรือ ไม่พบสัญญาณ AP) |
-| `WIFI_PROV_CRED_SUCCESS` | เชื่อมต่อ Wi-Fi สำเร็จ และบันทึกข้อมูลลง NVS Flash เรียบร้อย              |
-| `WIFI_PROV_END`          | กระบวนการเสร็จสิ้น คืนหน่วยความจำ Bluetooth/SoftAP ให้ระบบใช้งานอื่น      |
+| `NETWORK_PROV_START`        | ระบบ Provisioning เริ่มต้น กระจายสัญญาณ BLE หรือ SoftAP                   |
+| `NETWORK_PROV_WIFI_CRED_RECV`    | บอกว่าได้รับข้อมูล SSID/Password จากสมาร์ตโฟนแล้ว                         |
+| `NETWORK_PROV_WIFI_CRED_FAIL`    | ข้อมูล Wi-Fi ที่ส่งมาเชื่อมต่อไม่สำเร็จ (รหัสผ่านผิด หรือ ไม่พบสัญญาณ AP) |
+| `NETWORK_PROV_WIFI_CRED_SUCCESS` | เชื่อมต่อ Wi-Fi สำเร็จ และบันทึกข้อมูลลง NVS Flash เรียบร้อย              |
+| `NETWORK_PROV_END`          | กระบวนการเสร็จสิ้น คืนหน่วยความจำ Bluetooth/SoftAP ให้ระบบใช้งานอื่น      |
 
 ---
 

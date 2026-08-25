@@ -3,7 +3,7 @@
 ## 0. กล่าวนำ (Introduction)
 **Bluetooth Low Energy (BLE) Provisioning** เป็นรูปแบบมาตรฐานสากลที่อุปกรณ์ Smart Home ชั้นนำ (เช่น Apple HomeKit, Google Home, Matter Protocol) เลือกใช้ เนื่องจากผู้ใช้ไม่ต้องสลับการเชื่อมต่อ Wi-Fi บนสมาร์ตโฟน 
 
-ในใบงานนี้ นักศึกษาจะได้สลับ ESP32 มาทำงานในโหมด **BLE Scheme (`wifi_prov_scheme_ble`)** พร้อมทั้งใช้เครื่องมือวิเคราะห์เชิงลึก **nRF Connect for Mobile** เพื่อส่องดูโครงสร้างภายในของ **GATT Primary Services, 128-bit UUIDs, Characteristics และ Descriptors** ก่อนจะทำการ Provisioning ผ่านแอป **ESP BLE Provisioning**
+ในใบงานนี้ นักศึกษาจะได้สลับ ESP32 มาทำงานในโหมด **BLE Scheme (`network_prov_scheme_ble`)** พร้อมทั้งใช้เครื่องมือวิเคราะห์เชิงลึก **nRF Connect for Mobile** เพื่อส่องดูโครงสร้างภายในของ **GATT Primary Services, 128-bit UUIDs, Characteristics และ Descriptors** ก่อนจะทำการ Provisioning ผ่านแอป **ESP BLE Provisioning**
 
 ---
 
@@ -59,7 +59,7 @@ graph TD
    ```
 2. สังเกต Log ใน Serial Monitor:
    ```text
-   I (712) wifi_prov_scheme_ble: Starting BLE provisioning
+   I (712) network_prov_scheme_ble: Starting BLE provisioning
    I (722) app: Starting provisioning
    I (732) app: Scan this QR code from the provisioning application for Provisioning.
    ... [QR Code ASCII & URL] ...
@@ -95,8 +95,8 @@ graph TD
 สังเกตใน Serial Monitor หลังเชื่อมต่อ Wi-Fi สำเร็จ:
 ```text
 I (24560) app: Provisioning successful
-I (24570) wifi_prov_scheme_ble: BT memory released
-I (24580) wifi_prov_scheme_ble: BTDM memory released
+I (24570) network_prov_scheme_ble: BT memory released
+I (24580) network_prov_scheme_ble: BTDM memory released
 I (26120) app: Connected with IP Address: 192.168.1.155
 ```
 > **ข้อสังเกต:** บอร์ดจะทำการล้างและคืนหน่วยความจำของ Bluetooth Stack ทั้งหมดคืนสู่ระบบ DRAM ทันที ทำให้ประหยัด RAM ได้มหาศาล!
@@ -118,7 +118,7 @@ I (26120) app: Connected with IP Address: 192.168.1.155
 ### ภารกิจที่ 2: ผังลำดับการคืนหน่วยความจำ Bluetooth (BLE Lifecycle & Memory Reclaim Flow)
 ให้นักศึกษาวาด Flowchart / Sequence แสดงว่า:
 1. การเชื่อมต่อ BLE ถูกตรวจพบผ่าน Event `PROTOCOMM_TRANSPORT_BLE_CONNECTED` (LED 2 กระพริบเร็ว 100ms)
-2. เมื่อเชื่อมต่อ Wi-Fi สำเร็จ (`WIFI_PROV_CRED_SUCCESS`) $\rightarrow$ เกิด Event `WIFI_PROV_END`
+2. เมื่อเชื่อมต่อ Wi-Fi สำเร็จ (`NETWORK_PROV_WIFI_CRED_SUCCESS`) $\rightarrow$ เกิด Event `NETWORK_PROV_END`
 3. Provisioning Manager สั่งเรียก `esp_bt_mem_release()` เพื่อปล่อย DRAM คืนสู่ระบบอย่างไร
 
 ```text

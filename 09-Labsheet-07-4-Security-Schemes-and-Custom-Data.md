@@ -10,7 +10,7 @@
 ## 1. วัตถุประสงค์ (Objectives)
 1. เข้าใจบทบาทและการทำงานของ **Proof-of-Possession (PoP)** ในการป้องกันการโจมตีแบบสวมรอย (Rogue Provisioning)
 2. ทดลองจำลองกรณีป้อน PoP ผิด และสังเกต Event `PROTOCOMM_SECURITY_SESSION_CREDENTIALS_MISMATCH`
-3. เข้าใจการลงทะเบียน Custom Endpoint ด้วย `wifi_prov_mgr_endpoint_create()` และ `wifi_prov_mgr_endpoint_register()`
+3. เข้าใจการลงทะเบียน Custom Endpoint ด้วย `network_prov_mgr_endpoint_create()` และ `network_prov_mgr_endpoint_register()`
 4. สังเกตและวิเคราะห์การรับส่งข้อมูลผ่าน Custom Handler (`custom_prov_data_handler`)
 
 ---
@@ -83,13 +83,13 @@ esp_err_t custom_prov_data_handler(uint32_t session_id, const uint8_t *inbuf, ss
 และขั้นตอนการลงทะเบียนใน `app_main()`:
 ```c
 // 1. สร้าง Endpoint ก่อนเริ่ม Provisioning Service
-wifi_prov_mgr_endpoint_create("custom-data");
+network_prov_mgr_endpoint_create("custom-data");
 
 // 2. เริ่มต้น Service
-ESP_ERROR_CHECK(wifi_prov_mgr_start_provisioning(security, (const void *) sec_params, service_name, service_key));
+ESP_ERROR_CHECK(network_prov_mgr_start_provisioning(security, (const void *) sec_params, service_name, service_key));
 
 // 3. ผูกฟังก์ชัน Callback เข้ากับ Endpoint หลังเริ่ม Service แล้ว
-wifi_prov_mgr_endpoint_register("custom-data", custom_prov_data_handler, NULL);
+network_prov_mgr_endpoint_register("custom-data", custom_prov_data_handler, NULL);
 ```
 
 ---

@@ -71,7 +71,7 @@ flowchart LR
 ![](ESP32%20Provision.drawio.svg)
 
 * **ซอฟต์แวร์บนคอมพิวเตอร์**
-  * ESP-IDF Toolchain (v5.x หรือใหม่กว่า)
+  * ESP-IDF Toolchain **v6.0.2** (โค้ดตัวอย่างในสัปดาห์นี้ปรับให้ใช้ IDF v6.x แล้ว)
   * Serial Monitor Tool (ESP-IDF Monitor)
 * **แอปพลิเคชันบนสมาร์ตโฟน**
   * **Playstore**

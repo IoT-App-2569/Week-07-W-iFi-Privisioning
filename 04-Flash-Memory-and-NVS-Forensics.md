@@ -99,8 +99,8 @@ Offset 0x00000140:  ... sta.pswd ... Password1234! ...
 | :---------------------------------- | :-------------------------------------- | :----------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------- |
 | **1. CLI Full Erase**               | `idf.py erase-flash`                    | ล้างทุกเซกเตอร์ใน Flash เป็น `0xFF` ทั้งหมด (Bootloader, Partition Table, NVS, App หายหมด) | ❌ กู้คืนไม่ได้ ต้อง Flash โค้ดใหม่                                                |
 | **2. CLI Partition Erase**          | `esptool.py erase_region 0x9000 0x6000` | ลบเฉพาะ Partition `nvs` เป็น `0xFF` แต่เฟิร์มแวร์ Application ยังคงอยู่                    | ❌ กู้คืนไม่ได้ (NVS ถูกลบเกลี้ยง)                                                 |
-| **3. Menuconfig Flag / Code Reset** | `wifi_prov_mgr_reset_provisioning()`    | ส่งคำสั่งลบเฉพาะ Key ที่เกี่ยวข้องกับ Wi-Fi ใน Namespace `nvs.net80211`                    | ⚠️ อาจยังมีข้อมูลเก่าค้างใน Erased Entry (ถ้ายังไม่เกิด Flash Garbage Collection) |
-| **4. Hardware Button Reset**        | กดปุ่ม BOOT ค้างตอนเปิดเครื่อง          | เรียก `nvs_flash_erase()` หรือ `wifi_prov_mgr_reset_provisioning()` ทางซอฟต์แวร์           | ขึ้นอยู่กับฟังก์ชันที่เลือกใช้                                                    |
+| **3. Menuconfig Flag / Code Reset** | `network_prov_mgr_reset_wifi_provisioning()`    | ส่งคำสั่งลบเฉพาะ Key ที่เกี่ยวข้องกับ Wi-Fi ใน Namespace `nvs.net80211`                    | ⚠️ อาจยังมีข้อมูลเก่าค้างใน Erased Entry (ถ้ายังไม่เกิด Flash Garbage Collection) |
+| **4. Hardware Button Reset**        | กดปุ่ม BOOT ค้างตอนเปิดเครื่อง          | เรียก `nvs_flash_erase()` หรือ `network_prov_mgr_reset_wifi_provisioning()` ทางซอฟต์แวร์           | ขึ้นอยู่กับฟังก์ชันที่เลือกใช้                                                    |
 
 ---
 
