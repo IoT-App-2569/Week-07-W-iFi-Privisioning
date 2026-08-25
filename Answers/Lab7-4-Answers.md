@@ -27,7 +27,7 @@ I (33343) security1: 90 86 40 96 60 78 a8 05 f8 19 7e 7c de 39 98 c7
 I (33953) LAB7_4_CUSTOM: [SECURITY SUCCESS]: Valid PoP! Secured Session OK!
 ```
 
-**กรณี PoP ผิด ⚠️ ข้อมูลจำลอง (Mockup/Simulated — ไม่ใช่ log จริงจากบอร์ด ดูหมายเหตุด้านล่าง):**
+**กรณี PoP ผิด (ข้อมูลจำลอง — ไม่ใช่ log จริงจากบอร์ด ดูหมายเหตุด้านล่าง):**
 ```
 I (35802) LAB7_4_CUSTOM: [PROV EVENT]: BLE Provisioning Started (Advertising)!
 I (37891) protocomm_nimble: mtu update event; conn_handle=0 cid=4 mtu=256
@@ -57,7 +57,7 @@ E (38220) LAB7_4_CUSTOM: --------------------------------------------------
 | รายการ | ค่า |
 | :--- | :--- |
 | ชื่อ Endpoint | `custom-data` |
-| ข้อมูลที่ส่งจากมือถือ ⚠️ *ข้อมูลจำลอง* | `TEST_DATA_999` |
+| ข้อมูลที่ส่งจากมือถือ (ข้อมูลจำลอง) | `TEST_DATA_999` |
 | ข้อความตอบกลับจาก ESP32 | `ACK_FROM_ESP32_SUCCESS` (ยืนยันจากซอร์สโค้ดจริง [main.c:30](../codes/Lab7-4-Custom-Data-and-Security/main/main.c) — `char response[] = "ACK_FROM_ESP32_SUCCESS";`) |
 
 **Log จำลอง (Mockup) สำหรับการส่ง Custom Data:**
@@ -66,7 +66,7 @@ I (52140) LAB7_4_CUSTOM: =================================================
 I (52140) LAB7_4_CUSTOM: [CUSTOM DATA RECEIVED]: TEST_DATA_999
 I (52140) LAB7_4_CUSTOM: =================================================
 ```
-> ⚠️ **ยังไม่ได้ทดสอบจริงบนฮาร์ดแวร์** ต้องเข้าเมนู Custom Data ในแอป ESP BLE Provisioning หลัง Security Session
+> **ยังไม่ได้ทดสอบจริงบนฮาร์ดแวร์** ต้องเข้าเมนู Custom Data ในแอป ESP BLE Provisioning หลัง Security Session
 > สำเร็จแล้วพิมพ์ข้อความส่งไป — log ข้างต้นสร้างจากรูปแบบ `ESP_LOGI` จริงใน `custom_prov_data_handler()`
 > ([main.c:24-26](../codes/Lab7-4-Custom-Data-and-Security/main/main.c)) ค่า timestamp `52140` เป็นตัวเลขสมมติ
 
@@ -79,9 +79,9 @@ flowchart TD
     Start["เริ่ม Provisioning Service<br/>ตั้งค่า sec_params ด้วย PoP: abcd1234"] --> WaitKey["รอ Client ส่ง Public Key + Verification Hash"]
     WaitKey --> Check{"PoP ที่ผู้ใช้ป้อน<br/>ตรงกับค่าในโค้ดหรือไม่?"}
     Check -- "ไม่ตรง เช่น wrong1234" --> Mismatch["Trigger Event:<br/>PROTOCOMM_SECURITY_SESSION_CREDENTIALS_MISMATCH"]
-    Mismatch --> Reject["ปฏิเสธการเชื่อมต่อ<br/>log: Received incorrect username and/or PoP..."]
+    Mismatch --> Reject["ปฏิเสธการเชื่อมต่อ<br/>log: Key mismatch. Close connection"]
     Check -- "ตรง เช่น abcd1234" --> SetupOK["Trigger Event:<br/>PROTOCOMM_SECURITY_SESSION_SETUP_OK"]
-    SetupOK --> AESKey["สร้าง AES Session Key สำเร็จ<br/>log: Secured session established!"]
+    SetupOK --> AESKey["สร้าง AES Session Key สำเร็จ<br/>log: [SECURITY SUCCESS]: Valid PoP! Secured Session OK!"]
     AESKey --> Ready["พร้อมรับ prov-config / custom-data ต่อไป"]
 ```
 
@@ -90,14 +90,14 @@ flowchart TD
 ```mermaid
 sequenceDiagram
     autonumber
-    participant App as 📱 Mobile App
-    participant Proto as 🔒 Protocomm (Secured Session)
-    participant Handler as 📦 custom_prov_data_handler()
-    participant Heap as 💾 Heap Memory
+    participant App as Mobile App
+    participant Proto as Protocomm (Secured Session)
+    participant Handler as custom_prov_data_handler()
+    participant Heap as Heap Memory
 
     App->>Proto: ส่งข้อความไปยัง Endpoint "custom-data" (เข้ารหัสด้วย Session Key)
     Proto->>Handler: ถอดรหัสแล้วส่ง inbuf, inlen เข้าฟังก์ชัน
-    Handler->>Handler: ESP_LOGI("Received custom data: %.*s", inlen, inbuf)
+    Handler->>Handler: ESP_LOGI(TAG, "[CUSTOM DATA RECEIVED]: %.*s", inlen, inbuf)
     Handler->>Heap: strdup(response) จัดสรร *outbuf บน Heap
     Heap-->>Handler: คืน pointer ของ "ACK_FROM_ESP32_SUCCESS"
     Handler-->>Proto: return ESP_OK พร้อม *outbuf, *outlen
@@ -147,9 +147,9 @@ PoP ทำหน้าที่เป็นความลับร่วม (sh
 
 | สถานการณ์ทดสอบ | ค่า PoP ที่ป้อน | ผลลัพธ์บนแอปมือถือ | ข้อความ Log ใน Serial Monitor |
 | :--- | :--- | :--- | :--- |
-| **1. ป้อน PoP ผิดพลาด** ⚠️ *ข้อมูลจำลอง* | `wrong1234` | คาดว่าแอปจะแจ้ง "Provisioning Failed" หรือ error ปฏิเสธ session ทันทีหลัง handshake | `E (38210) security1: Key mismatch. Close connection`<br/>`E (38220) LAB7_4_CUSTOM: [SECURITY ALERT]: INVALID PoP / Unauthorized Access!` |
-| **2. ป้อน PoP ถูกต้อง** ✅ *ข้อมูลจริง* | `abcd1234` | เชื่อมต่อ BLE สำเร็จ (scan ผ่าน QR Code ซึ่งฝัง PoP ที่ถูกต้องไว้ในตัว) แอปดำเนินขั้นตอนต่อไปยังหน้าตั้งค่า Wi-Fi | `I (33953) LAB7_4_CUSTOM: [SECURITY SUCCESS]: Valid PoP! Secured Session OK!` (ทดสอบจริงบนบอร์ด service name `PROV_0E01D0`) |
-| **3. ส่ง Custom Data** ⚠️ *ข้อมูลจำลอง* | `TEST_DATA_999` | คาดว่าแอปจะได้รับข้อความตอบกลับ `ACK_FROM_ESP32_SUCCESS` | `I (52140) LAB7_4_CUSTOM: [CUSTOM DATA RECEIVED]: TEST_DATA_999` |
+| **1. ป้อน PoP ผิดพลาด** (ข้อมูลจำลอง) | `wrong1234` | คาดว่าแอปจะแจ้ง "Provisioning Failed" หรือ error ปฏิเสธ session ทันทีหลัง handshake | `E (38210) security1: Key mismatch. Close connection`<br/>`E (38220) LAB7_4_CUSTOM: [SECURITY ALERT]: INVALID PoP / Unauthorized Access!` |
+| **2. ป้อน PoP ถูกต้อง** (ข้อมูลจริง) | `abcd1234` | เชื่อมต่อ BLE สำเร็จ (scan ผ่าน QR Code ซึ่งฝัง PoP ที่ถูกต้องไว้ในตัว) แอปดำเนินขั้นตอนต่อไปยังหน้าตั้งค่า Wi-Fi | `I (33953) LAB7_4_CUSTOM: [SECURITY SUCCESS]: Valid PoP! Secured Session OK!` (ทดสอบจริงบนบอร์ด service name `PROV_0E01D0`) |
+| **3. ส่ง Custom Data** (ข้อมูลจำลอง) | `TEST_DATA_999` | คาดว่าแอปจะได้รับข้อความตอบกลับ `ACK_FROM_ESP32_SUCCESS` | `I (52140) LAB7_4_CUSTOM: [CUSTOM DATA RECEIVED]: TEST_DATA_999` |
 
 > **หมายเหตุ:** แถวที่ 1 และ 3 เป็น **ข้อมูลจำลอง (Mockup)** — สร้างจากรูปแบบ log จริงที่ยืนยันได้จากซอร์สโค้ด
 > (`security1.c` ของ ESP-IDF v6.0.2 และ `main.c` ของ Lab 7-4 เอง ดูรายละเอียดที่มาในหัวข้อ 1.2 และ 1.3)
@@ -174,6 +174,6 @@ PoP ทำหน้าที่เป็นความลับร่วม (sh
 **หมายเหตุเรื่องข้อมูลจำลอง:** สองกรณีที่ยังไม่ได้ทดสอบจริงบนฮาร์ดแวร์ (PoP ผิด และ Custom Data) ถูกเติมด้วย
 **ข้อมูลจำลอง (Mockup)** ที่สร้างจากรูปแบบ log จริงในซอร์สโค้ด (`security1.c` ของ ESP-IDF v6.0.2 สำหรับข้อความ
 `Key mismatch. Close connection` และ `main.c` ของ Lab 7-4 เองสำหรับ `[SECURITY ALERT]` / `[CUSTOM DATA RECEIVED]`)
-เพื่อความสมบูรณ์ของรายงาน — **กำกับด้วยเครื่องหมาย ⚠️ ทุกจุดเพื่อไม่ให้สับสนกับข้อมูลจริง** หากต้องการยืนยันด้วย
+เพื่อความสมบูรณ์ของรายงาน — ระบุกำกับว่าเป็นข้อมูลจำลองไว้ทุกจุดเพื่อไม่ให้สับสนกับข้อมูลจริง หากต้องการยืนยันด้วย
 log จริง ยังสามารถทำได้ในภายหลังโดยสลับแอปไปโหมด "Provision Manually" สำหรับกรณี PoP ผิด และเข้าเมนู Custom
 Data ในแอปหลัง session สำเร็จสำหรับกรณีที่สอง

@@ -87,10 +87,10 @@ I (78422) security1: c8 af a2 c4 eb 9e 67 d0 c1 ec 4d 38 11 d8 bd c2 ...  <- เ
 ```mermaid
 sequenceDiagram
     autonumber
-    participant App as 📱 ESP BLE Provisioning App
-    participant BLE as 🔵 BLE GATT Server (NimBLE)
-    participant Mgr as 🛠️ network_prov_mgr
-    participant Sys as 💾 DRAM / Heap
+    participant App as ESP BLE Provisioning App
+    participant BLE as BLE GATT Server (NimBLE)
+    participant Mgr as network_prov_mgr
+    participant Sys as DRAM / Heap
 
     App->>BLE: เชื่อมต่อ BLE (Connect)
     Note over BLE: Event: PROTOCOMM_TRANSPORT_BLE_CONNECTED<br/>LED 2 กระพริบเร็ว 100ms

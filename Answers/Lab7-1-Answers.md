@@ -46,7 +46,7 @@ W (622) LAB7_1_RESET: Ready for Provisioning Lab 7-2 (SoftAP) or 7-3 (BLE)!
 
 ```mermaid
 flowchart TD
-    Start["⚡ app_main() เริ่มทำงาน"] --> CheckBtn["ตรวจสอบปุ่ม GPIO 18<br/>check_factory_reset_button()"]
+    Start["app_main() เริ่มทำงาน"] --> CheckBtn["ตรวจสอบปุ่ม GPIO 18<br/>check_factory_reset_button()"]
     CheckBtn -- "กดค้างครบ 3 วิ (Low)" --> EraseNVS["nvs_flash_erase()<br/>log: FACTORY RESET TRIGGERED"]
     CheckBtn -- "ไม่ได้กด (High)" --> NvsInit["nvs_flash_init()"]
     EraseNVS --> NvsInit

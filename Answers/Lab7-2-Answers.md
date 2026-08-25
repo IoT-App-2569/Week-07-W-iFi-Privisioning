@@ -18,7 +18,7 @@
 
 | Endpoint | หน้าที่ | สังเกตจาก |
 | :--- | :--- | :--- |
-| `prov-session` | ทำ Security Handshake (key exchange แบบ Curve25519 + ยืนยัน PoP) เพื่อสร้าง Secured Session ระหว่างแอปกับ ESP32 ก่อนส่งข้อมูลอื่น | log `security1: ...` (ชุด hex ที่เป็นข้อมูลเข้ารหัสของ session setup) และ log `Secured session established!` |
+| `prov-session` | ทำ Security Handshake (key exchange แบบ Curve25519 + ยืนยัน PoP) เพื่อสร้าง Secured Session ระหว่างแอปกับ ESP32 ก่อนส่งข้อมูลอื่น | log `security1: ...` (ชุด hex ที่เป็นข้อมูลเข้ารหัสของ session setup) — โค้ดของ Lab 7-2 ไม่ได้ดักฟัง event `PROTOCOMM_SECURITY_SESSION_EVENT` จึงไม่มี log แจ้งผลสำเร็จของ session แยกออกมา ต้องดูจากบรรทัดถัดไปที่มี `[CREDENTIALS RECEIVED]` แทน เพราะจะเกิดขึ้นได้ก็ต่อเมื่อ session ผ่านแล้วเท่านั้น |
 | `prov-config` | รับ SSID/Password เป้าหมายจากแอป (เข้ารหัสด้วย session key ที่ตกลงกันไว้) แล้วสั่งให้ ESP32 เชื่อมต่อ Wi-Fi นั้น | log `[CREDENTIALS RECEIVED]: Target SSID: MyHomeWiFi-SSID, Target Password: ***REDACTED***` และ `wifi:state: init -> auth -> assoc -> run` ตามด้วย `wifi:connected with MyHomeWiFi-SSID` |
 | `prov-scan` | สั่งให้ ESP32 สแกนหา Wi-Fi AP รอบตัวแล้วส่งรายชื่อ SSID + RSSI กลับไปให้แอปเลือก | ไม่ปรากฏ log แยกในตัวอย่างนี้ (เพราะผู้ใช้พิมพ์ SSID/Password เอง ไม่ได้เลือกจากรายการสแกน) แต่ endpoint นี้ถูกเรียกเมื่อแอปกดปุ่ม "Scan" |
 | `proto-ver` | ให้แอปตรวจสอบเวอร์ชันของ Protocomm/Provisioning protocol และ capabilities ที่ ESP32 รองรับ ก่อนเริ่ม session | เรียกเป็นคำสั่งแรกสุดตอนแอปเชื่อมต่อ SoftAP สำเร็จ (ก่อน `prov-session`) ไม่ได้แสดง payload ใน log ที่บันทึกไว้ |
@@ -60,9 +60,9 @@ I (531447) wifi:security: WPA2-PSK, phy: bgn, rssi: -35, cipher(pairwise:0x3, gr
 ```mermaid
 sequenceDiagram
     autonumber
-    participant App as 📱 Smartphone App (ESP SoftAP Prov)
-    participant ESP as ⚡ ESP32 SoftAP Webserver (Protocomm)
-    participant Router as 📡 Wi-Fi Router (MyHomeWiFi-SSID)
+    participant App as Smartphone App (ESP SoftAP Prov)
+    participant ESP as ESP32 SoftAP Webserver (Protocomm)
+    participant Router as Wi-Fi Router (MyHomeWiFi-SSID)
 
     Note over ESP: SoftAP SSID: PROV_0E01D0<br/>IP: 192.168.4.1
     App->>ESP: เชื่อมต่อ Wi-Fi SSID PROV_0E01D0
@@ -71,7 +71,7 @@ sequenceDiagram
     App->>ESP: HTTP POST /prov-session (Key Exchange + PoP: abcd1234)
     Note over ESP: log security1: ชุด hex ของ session key exchange
     ESP-->>App: HTTP 200 OK
-    Note over ESP: Event: PROTOCOMM_SECURITY_SESSION_SETUP_OK<br/>"Secured session established!"
+    Note over ESP: Event: PROTOCOMM_SECURITY_SESSION_SETUP_OK<br/>(ไม่มี log แจ้งจากแอป เพราะ Lab 7-2 ไม่ได้ดักฟัง event นี้)
 
     App->>ESP: HTTP POST /prov-config (SSID: MyHomeWiFi-SSID, Password: ***REDACTED***, เข้ารหัสแล้ว)
     Note over ESP: Event: NETWORK_PROV_WIFI_CRED_RECV<br/>log [CREDENTIALS RECEIVED]
