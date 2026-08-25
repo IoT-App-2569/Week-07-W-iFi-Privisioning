@@ -14,8 +14,7 @@
 
 ### 1.2 ผลการทดสอบ PoP ถูก / ผิด
 
-<img width="709" height="1568" alt="image" src="https://github.com/user-attachments/assets/04405f83-91bf-455a-83cd-b12335fac5a0" />
-
+<img width="959" height="503" alt="Screenshot 2026-08-25 152730" src="https://github.com/user-attachments/assets/800ed8ae-4b1a-4236-ae54-55524e71b98e" />
 
 **กรณี PoP ถูกต้อง (`abcd1234`):**
 ```
