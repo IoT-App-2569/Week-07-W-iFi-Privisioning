@@ -2,6 +2,8 @@
 
 > รหัสนักศึกษา 67030098 | ESP-IDF v6.0.2 | ESP32-D0WD-V3 (rev v3.1) | MAC `14:33:5c:0e:01:d0`
 
+<img width="1919" height="1005" alt="Screenshot 2026-08-25 104929" src="https://github.com/user-attachments/assets/76f3708b-45b4-46b9-abeb-017aeb9cd989" />
+
 ---
 
 ## 1. ผลการทดลอง (Results)

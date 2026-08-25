@@ -29,6 +29,10 @@
 
 ### 1.3 Log การคืนหน่วยความจำ Bluetooth หลัง Provisioning สำเร็จ
 
+<img width="959" height="503" alt="Screenshot 2026-08-25 135644" src="https://github.com/user-attachments/assets/81f228c5-7f06-4a03-837b-29009e6f57de" />
+
+<img width="709" height="1568" alt="image" src="https://github.com/user-attachments/assets/2546225b-4606-4ca7-8d90-ede04d2dc1d1" />
+
 ```text
 I (708912) LAB7_3_BLE: =================================================
 I (708912) LAB7_3_BLE: [ONLINE]: Connected to Wi-Fi with IP: 172.30.137.130

@@ -14,6 +14,8 @@
 
 ### 1.2 ผลการทดสอบ PoP ถูก / ผิด
 
+<img width="959" height="503" alt="Screenshot 2026-08-25 152730" src="https://github.com/user-attachments/assets/800ed8ae-4b1a-4236-ae54-55524e71b98e" />
+
 **กรณี PoP ถูกต้อง (`abcd1234`):**
 ```
 I (1093) network_prov_mgr: Provisioning started with service name : PROV_0E01D0
