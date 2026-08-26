@@ -2,8 +2,8 @@
 
 ## 1. บทนำ (Introduction)
 ในการทำ Wi-Fi Provisioning ข้อมูลจะต้องถูกส่งผ่านสื่อสัญญาณไร้สายชั่วคราวระหว่าง Smartphone และ ESP32 โดย ESP-IDF มี Transport Scheme หลักให้เลือก 2 ชนิด ได้แก่
-1. **Wi-Fi SoftAP Scheme (`wifi_prov_scheme_softap`)**  การ provision ผ่าน Wi-Fi
-2. **Bluetooth Low Energy Scheme (`wifi_prov_scheme_ble`)**  การ provision ผ่าน BLE
+1. **Wi-Fi SoftAP Scheme (`network_prov_scheme_softap`)**  การ provision ผ่าน Wi-Fi
+2. **Bluetooth Low Energy Scheme (`network_prov_scheme_ble`)**  การ provision ผ่าน BLE
 
 การเลือกใช้ Scheme มีผลอย่างยิ่งต่อประสบการณ์ผู้ใช้งาน (User Experience - UX), ความต้องการทรัพยากรฮาร์ดแวร์ (Hardware/Memory Overhead), และรูปแบบการตรวจสอบความปลอดภัยเชิงนิติวิทยาศาสตร์ (Forensic Analysis)
 
@@ -103,7 +103,7 @@ Bluetooth Stack บน ESP32 ใช้หน่วยความจำ RAM ค�
 
 ```c
 // คอนฟิกให้ Provisioning Manager ปล่อยหน่วยความจำ BT ทันทีเมื่อเสร็จสิ้น
-config.scheme_event_handler = WIFI_PROV_SCHEME_BLE_EVENT_HANDLER_FREE_BTDM;
+config.scheme_event_handler = NETWORK_PROV_SCHEME_BLE_EVENT_HANDLER_FREE_BTDM;
 ```
 
 เมื่อกระบวนการ Provisioning จบลง ฟังก์ชัน `esp_bt_mem_release(ESP_BT_MODE_BTDM)` จะถูกเรียกโดยอัตโนมัติ ทำให้ระบบได้ RAM ก้อนใหญ่กลับคืนมาสำหรับใช้งาน Wi-Fi, MQTT หรือ TLS อย่างเต็มประสิทธิภาพ

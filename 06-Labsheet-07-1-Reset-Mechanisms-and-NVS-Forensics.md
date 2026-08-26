@@ -11,7 +11,7 @@
 ---
 
 ## 1. วัตถุประสงค์ (Objectives)
-1. ศึกษาและทำความเข้าใจสถานะ `Already provisioned` และการตัดสินใจของ `wifi_prov_mgr_is_provisioned()`
+1. ศึกษาและทำความเข้าใจสถานะ `Already provisioned` และการตัดสินใจของ `network_prov_mgr_is_wifi_provisioned()`
 2. สามารถล้างข้อมูลการเชื่อมต่อใน Flash Memory ผ่านคำสั่ง CLI (`idf.py erase-flash` และ `esptool.py`) ได้
 3. สามารถกำหนดค่า Build Configuration ใน `menuconfig` เพื่อสั่งรีเซ็ต State Machine ได้
 4. เข้าใจข้อจำกัดของ **Strapping Pins (GPIO 0 / Bootloader Trap)** และสามารถต่อสวิตช์ปุ่มกดภายนอก (GPIO 18) เพื่อเขียนโปรแกรม Factory Reset ทางกายภาพได้อย่างถูกต้อง
@@ -47,10 +47,10 @@ flowchart TD
     
     HW_Reset --> Init_Prov["เข้าสู่โหมด Provisioning<br/>(กระจายสัญญาณ BLE / SoftAP)"]
     
-    Check_Config -- "เปิดใช้งาน Flag" --> Menu_Reset["[Menuconfig Reset]<br/>เรียก wifi_prov_mgr_reset_provisioning()"]
+    Check_Config -- "เปิดใช้งาน Flag" --> Menu_Reset["[Menuconfig Reset]<br/>เรียก network_prov_mgr_reset_wifi_provisioning()"]
     Menu_Reset --> Init_Prov
     
-    Check_Config -- "ปิดใช้งาน Flag" --> Check_NVS["3. ตรวจสอบค่าใน NVS Flash<br/>wifi_prov_mgr_is_provisioned()"]
+    Check_Config -- "ปิดใช้งาน Flag" --> Check_NVS["3. ตรวจสอบค่าใน NVS Flash<br/>network_prov_mgr_is_wifi_provisioned()"]
     
     Check_NVS -- "true (มีข้อมูลเดิม)" --> STA_Mode["[Already Provisioned]<br/>เริ่ม Wi-Fi Station ทันที"]
     Check_NVS -- "false (ว่างเปล่า/เพิ่งถูกลบด้วย CLI)" --> Init_Prov
@@ -172,7 +172,7 @@ void app_main(void)
 1. การตรวจสอบสถานะปุ่ม **GPIO 18** (ตรวจจับการกดค้าง 3 วินาที)
 2. การทำงานของ `nvs_flash_init()` และกรณีที่ต้อง `nvs_flash_erase()`
 3. การตรวจสอบ Macro `#ifdef CONFIG_EXAMPLE_RESET_PROVISIONED`
-4. การเรียกฟังก์ชัน `wifi_prov_mgr_is_provisioned(&provisioned)`
+4. การเรียกฟังก์ชัน `network_prov_mgr_is_wifi_provisioned(&provisioned)`
 5. จุดแยกสายการทำงานเข้าสู่โหมด **Provisioning Mode** หรือ **Station Mode**
 
 ```text
@@ -190,9 +190,25 @@ void app_main(void)
 
 | รูปแบบการ Reset                  | คำสั่ง / พฤติกรรมที่ทำ               | พฤติกรรมของ LED แต่ละดวงหลังเปิดเครื่อง | สถานะใน Serial Monitor |
 | :------------------------------- | :----------------------------------- | :-------------------------------------- | :--------------------- |
-| **1. CLI Erase**                 | `idf.py erase-flash`                 |                                         |                        |
-| **2. Menuconfig Flag**           | `CONFIG_EXAMPLE_RESET_PROVISIONED=y` |                                         |                        |
-| **3. Hardware Button (GPIO 18)** | กดปุ่ม GPIO 18 ค้าง 3 วินาที         |                                         |                        |
+| **1. CLI Erase**                 | `idf.py -p COM3 erase-flash` ตามด้วย `idf.py -p COM3 flash` | LED 1 ดับสนิท (ยังไม่ provision, ยังไม่เรียก `esp_wifi_start()`) | `[STATUS]: Device is NOT provisioned (NVS is empty)` — เหมือนบูตเครื่องใหม่จากโรงงาน 100% เพราะ Partition Table, Bootloader และ NVS ถูกลบทั้งหมด ไม่ใช่แค่ NVS |
+| **2. Menuconfig Flag**           | `CONFIG_EXAMPLE_RESET_PROVISIONED=y` | *(ไม่สามารถทดสอบได้กับโค้ดชุดนี้ — ดูหมายเหตุด้านล่างตาราง)* | *(ไม่สามารถทดสอบได้กับโค้ดชุดนี้)* |
+| **3. Hardware Button (GPIO 18)** | กดปุ่ม GPIO 18 ค้าง 3 วินาที         | ก่อนกด: LED 1 ดับ (ยังไม่ provision) / ระหว่างกดค้าง: ไม่มีผลต่อ LED เพราะ `check_factory_reset_button()` เป็น blocking loop | `Hold GPIO 18 button for 3 seconds...` ตามด้วย `Holding button... N/3 seconds` ทุก 1 วินาที แล้วจบด้วย `>>> FACTORY RESET TRIGGERED! ERASING NVS FLASH <<<` เมื่อครบ 3 วินาที |
+
+> [!NOTE]
+> **แถวที่ 1 และ 3** อ้างอิงจากพฤติกรรมมาตรฐานของ esptool/ESP-IDF และ log จริงที่ยืนยันแล้วบางส่วน
+> (เช่น บรรทัด `Hold GPIO 18 button...` ตามด้วย `NOT provisioned` ทันทีในการบูตปกติ ยืนยันว่า GPIO 18
+> เป็น HIGH ตามที่ควรเมื่อไม่มีการกดปุ่ม) แต่ **ยังไม่ได้รันทดสอบ `erase-flash` และการกดปุ่มค้าง 3 วินาทีจริง
+> บนบอร์ดนี้ในรอบนี้** เนื่องจาก COM3 ถูกใช้งานอยู่โดยกระบวนการอื่น (สันนิษฐานว่าเป็น Serial Monitor ของ VS Code)
+> แนะนำให้ปิด Serial Monitor ใน VS Code ก่อน แล้วรันทดสอบจริงเพื่อยืนยันผล
+>
+> **แถวที่ 2 (Menuconfig Flag)** ไม่สามารถทดสอบได้ เพราะไฟล์ `codes/Lab7-1-Reset-and-NVS-Forensics/main/main.c`
+> ที่แจกให้ **ไม่ได้ implement Macro `CONFIG_EXAMPLE_RESET_PROVISIONED`** เลย (ตรวจสอบด้วย `grep` แล้วไม่พบ)
+> ใบงานต้นฉบับอธิบายกลไกนี้เป็นแนวคิดสำหรับ IDF Example (`wifi_prov_mgr`) ซึ่งมี Kconfig option ดังกล่าวอยู่แล้ว
+> หากต้องการทดสอบวิธีนี้จริง ต้องเพิ่มโค้ดต่อไปนี้เข้าไปเองก่อน:
+> 1. เพิ่ม entry ใน `main/Kconfig.projbuild` เพื่อประกาศ `CONFIG_EXAMPLE_RESET_PROVISIONED`
+> 2. เพิ่มเงื่อนไข `#ifdef CONFIG_EXAMPLE_RESET_PROVISIONED` เรียก `network_prov_mgr_reset_wifi_provisioning()`
+>    ก่อนการเช็ค `network_prov_mgr_is_wifi_provisioned()` ใน `app_main()`
+
 
 ---
 

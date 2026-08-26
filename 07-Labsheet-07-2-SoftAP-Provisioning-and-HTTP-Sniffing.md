@@ -1,7 +1,7 @@
 # ใบงานที่ 7.2 การคอนฟิก Wi-Fi ผ่าน SoftAP Scheme และการวิเคราะห์ Protocomm Endpoints
 
 ## 0. กล่าวนำ (Introduction)
-ในใบงานนี้ นักศึกษาจะได้ทดลองตั้งค่าเครือข่าย Wi-Fi ให้กับ ESP32 ผ่านช่องทาง **Wi-Fi SoftAP Scheme (`wifi_prov_scheme_softap`)** โดยใช้สมาร์ตโฟนเชื่อมต่อเข้ากับเครือข่ายจำลองที่ ESP32 สร้างขึ้น 
+ในใบงานนี้ นักศึกษาจะได้ทดลองตั้งค่าเครือข่าย Wi-Fi ให้กับ ESP32 ผ่านช่องทาง **Wi-Fi SoftAP Scheme (`network_prov_scheme_softap`)** โดยใช้สมาร์ตโฟนเชื่อมต่อเข้ากับเครือข่ายจำลองที่ ESP32 สร้างขึ้น 
 
 นักศึกษาจะได้เรียนรู้โครงสร้างของ QR Code Payload, การทำงานของ Protocomm ผ่านโปรโตคอล HTTP REST-like Endpoints (`/prov-session`, `/prov-config`), และการส่งข้อมูลการตั้งค่า Wi-Fi จากแอปพลิเคชันมือถือ **ESP SoftAP Provisioning**
 
@@ -63,7 +63,7 @@ sequenceDiagram
    ```
 2. สังเกต Log ใน Serial Monitor จะปรากฏข้อความและ QR Code:
    ```text
-   I (776) wifi_prov_scheme_softap: Starting SoftAP with SSID: PROV_XXXXXX
+   I (776) network_prov_scheme_softap: Starting SoftAP with SSID: PROV_XXXXXX
    I (786) app: Scan this QR code from the provisioning application for Provisioning.
    ... [รูป QR Code แบบ ASCII Text] ...
    I (816) app: If QR code is not visible, copy paste the below URL in a browser.
@@ -115,8 +115,8 @@ I (19850) app: Connected with IP Address: 192.168.1.150
 - Event ของ ESP-IDF ที่ถูก Trigger ใน `event_handler()` เช่น:
   - `WIFI_EVENT_AP_STACONNECTED`
   - `PROTOCOMM_SECURITY_SESSION_SETUP_OK`
-  - `WIFI_PROV_CRED_RECV`
-  - `WIFI_PROV_CRED_SUCCESS`
+  - `NETWORK_PROV_WIFI_CRED_RECV`
+  - `NETWORK_PROV_WIFI_CRED_SUCCESS`
   - `IP_EVENT_STA_GOT_IP`
 - สถานะจังหวะการกระพริบของ **LED 3 (GPIO 5)** และ **LED 1 (GPIO 2)** ในแต่ละช่วง
 
@@ -130,17 +130,17 @@ I (19850) app: Connected with IP Address: 192.168.1.150
 
 | รายการตรวจสอบ | ค่าที่บันทึกได้จากการทดลอง |
 | :--- | :--- |
-| **1. ชื่อ SoftAP SSID ของ ESP32** | `PROV_`.............................. |
-| **2. รหัส PoP (Proof of Possession)** | ..................................................... |
-| **3. ข้อความใน QR Code Payload (JSON)** | ..................................................... |
-| **4. พฤติกรรมไฟ LED 3 (GPIO 5) ช่วงรอ vs ช่วงส่งข้อมูล** | ช่วงรอ: .......................................<br/>ช่วงส่ง: ....................................... |
-| **5. IP Address ที่ ESP32 ได้รับจาก Router** | ..................................................... |
-| **6. เวลาที่ใช้ตั้งแต่เริ่มจนจบกระบวนการ (วินาที)** | ..................................................... |
+| **1. ชื่อ SoftAP SSID ของ ESP32** | `PROV_0E01D0` (สร้างจาก MAC 3 ไบต์ท้าย `0e:01:d0`) |
+| **2. รหัส PoP (Proof of Possession)** | `abcd1234` |
+| **3. ข้อความใน QR Code Payload (JSON)** | `{"ver":"v1","name":"PROV_0E01D0","pop":"abcd1234","transport":"softap"}` |
+| **4. พฤติกรรมไฟ LED 3 (GPIO 5) ช่วงรอ vs ช่วงส่งข้อมูล** | ช่วงรอ (ก่อน `prov-session`): กระพริบช้า (ตามโค้ด event `NETWORK_PROV_START` สั่ง `gpio_set_level(LED_PIN_SOFTAP_PROV, 1)`)<br/>ช่วงส่ง/จบ (`NETWORK_PROV_WIFI_CRED_SUCCESS`): ไฟดับ (`gpio_set_level(LED_PIN_SOFTAP_PROV, 0)`) — *หมายเหตุ: เดิมโค้ดมีบั๊กที่ `led_task()` ไม่เคยถูกเรียกด้วย `xTaskCreate()` ทำให้ GPIO 5 ไม่เคยถูกตั้งเป็น output เลย จึงติดไม่ได้จริงไม่ว่ากรณีใด แก้แล้วโดยย้าย `gpio_config()` เข้า `app_main()` โดยตรง (ดู commit ล่าสุด) ค่าที่ระบุนี้เป็นพฤติกรรมตามโค้ดหลังแก้บั๊ก ยังไม่ได้ทวนซ้ำด้วยตาบนบอร์ดจริงหลังแก้*|
+| **5. IP Address ที่ ESP32 ได้รับจาก Router** | *ยังไม่มีข้อมูลจริง — log ที่บันทึกไว้ตัดตอนก่อนถึง `IP_EVENT_STA_GOT_IP` (ดูหมายเหตุใน [Answers/Lab7-2-Answers.md](../Answers/Lab7-2-Answers.md) ตาราง 3 แถวที่ 5) ต้องรันซ้ำจนจบแล้วนำ IP มาเติม* |
+| **6. เวลาที่ใช้ตั้งแต่เริ่มจนจบกระบวนการ (วินาที)** | ช่วง credential exchange ถึง associate สำเร็จ (จาก `security1` handshake ถึง `wifi:connected`) วัดได้ **~38 วินาที** จาก timestamp ใน log จริง แต่ไม่ใช่เวลารวมทั้งกระบวนการตั้งแต่ต้น เพราะ log ที่บันทึกไม่ได้เริ่มนับตั้งแต่ boot ต่อเนื่อง |
 
 ---
 
 ## 7. คำถามท้ายการทดลอง (Post-Lab Questions)
 1. ในโหมด SoftAP Scheme สมาร์ตโฟนส่งข้อมูลหา ESP32 ผ่านโปรโตคอลและ IP Address ใด?
-2. หากผู้ใช้ป้อนรหัสผ่าน Wi-Fi ผิดในแอปมือถือ จะเกิด Event ใดขึ้นบน ESP32 (`WIFI_PROV_CRED_FAIL` หรือไม่) และ ESP32 มีพฤติกรรมอย่างไร?
+2. หากผู้ใช้ป้อนรหัสผ่าน Wi-Fi ผิดในแอปมือถือ จะเกิด Event ใดขึ้นบน ESP32 (`NETWORK_PROV_WIFI_CRED_FAIL` หรือไม่) และ ESP32 มีพฤติกรรมอย่างไร?
 3. ทำไมผู้ผลิต IoT ส่วนใหญ่จึงมองว่ากระบวนการเชื่อมต่อแบบ SoftAP มีขั้นตอนที่ยุ่งยากสำหรับผู้ใช้ทั่วไปเมื่อเทียบกับ BLE?
 

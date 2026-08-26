@@ -10,7 +10,7 @@
 ## 1. วัตถุประสงค์ (Objectives)
 1. เข้าใจบทบาทและการทำงานของ **Proof-of-Possession (PoP)** ในการป้องกันการโจมตีแบบสวมรอย (Rogue Provisioning)
 2. ทดลองจำลองกรณีป้อน PoP ผิด และสังเกต Event `PROTOCOMM_SECURITY_SESSION_CREDENTIALS_MISMATCH`
-3. เข้าใจการลงทะเบียน Custom Endpoint ด้วย `wifi_prov_mgr_endpoint_create()` และ `wifi_prov_mgr_endpoint_register()`
+3. เข้าใจการลงทะเบียน Custom Endpoint ด้วย `network_prov_mgr_endpoint_create()` และ `network_prov_mgr_endpoint_register()`
 4. สังเกตและวิเคราะห์การรับส่งข้อมูลผ่าน Custom Handler (`custom_prov_data_handler`)
 
 ---
@@ -83,13 +83,13 @@ esp_err_t custom_prov_data_handler(uint32_t session_id, const uint8_t *inbuf, ss
 และขั้นตอนการลงทะเบียนใน `app_main()`:
 ```c
 // 1. สร้าง Endpoint ก่อนเริ่ม Provisioning Service
-wifi_prov_mgr_endpoint_create("custom-data");
+network_prov_mgr_endpoint_create("custom-data");
 
 // 2. เริ่มต้น Service
-ESP_ERROR_CHECK(wifi_prov_mgr_start_provisioning(security, (const void *) sec_params, service_name, service_key));
+ESP_ERROR_CHECK(network_prov_mgr_start_provisioning(security, (const void *) sec_params, service_name, service_key));
 
 // 3. ผูกฟังก์ชัน Callback เข้ากับ Endpoint หลังเริ่ม Service แล้ว
-wifi_prov_mgr_endpoint_register("custom-data", custom_prov_data_handler, NULL);
+network_prov_mgr_endpoint_register("custom-data", custom_prov_data_handler, NULL);
 ```
 
 ---
@@ -159,9 +159,16 @@ wifi_prov_mgr_endpoint_register("custom-data", custom_prov_data_handler, NULL);
 
 | สถานการณ์ทดสอบ | ค่า PoP ที่ป้อน | ผลลัพธ์บนแอปมือถือ | ข้อความ Log ใน Serial Monitor |
 | :--- | :--- | :--- | :--- |
-| **1. ป้อน PoP ผิดพลาด** | `wrong1234` | | |
-| **2. ป้อน PoP ถูกต้อง** | `abcd1234` | | |
-| **3. ส่ง Custom Data** | `TEST_DATA_999` | | |
+| **1. ป้อน PoP ผิดพลาด** (ข้อมูลจำลอง) | `wrong1234` | แอปแจ้ง "Provisioning Failed" / ปฏิเสธ session ทันทีหลัง handshake | `E (38210) security1: Key mismatch. Close connection`<br/>`E (38220) LAB7_4_CUSTOM: [SECURITY ALERT]: INVALID PoP / Unauthorized Access!` |
+| **2. ป้อน PoP ถูกต้อง** (ข้อมูลจริงจากบอร์ด) | `abcd1234` | เชื่อมต่อ BLE สำเร็จผ่าน QR Code แอปไปต่อขั้นตอนตั้งค่า Wi-Fi | `I (33953) LAB7_4_CUSTOM: [SECURITY SUCCESS]: Valid PoP! Secured Session OK!` |
+| **3. ส่ง Custom Data** (ข้อมูลจำลอง) | `abcd1234` (session ต้องผ่าน PoP ก่อน) | แอปได้รับข้อความตอบกลับ `ACK_FROM_ESP32_SUCCESS` | `I (52140) LAB7_4_CUSTOM: [CUSTOM DATA RECEIVED]: TEST_DATA_999` |
+
+> **หมายเหตุความถูกต้องของข้อมูล:** แถวที่ 1 และ 3 เป็น **ข้อมูลจำลอง (Mockup/Simulated)** สร้างขึ้นจาก
+> รูปแบบ log จริงที่ยืนยันได้จากซอร์สโค้ด (`security1.c` บรรทัด TAG=`security1`, `main.c` ของ Lab 7-4)
+> **ไม่ใช่ log ที่จับได้จากการรันจริงบนบอร์ด** เนื่องจากการ scan QR Code ของแอปฝัง PoP ที่ถูกต้องไว้อัตโนมัติ
+> (ต้องสลับไปโหมด "Provision Manually" ในแอปเพื่อพิมพ์ PoP ผิดเอง) และยังไม่ได้เข้าเมนู Custom Data ในแอปหลัง
+> session สำเร็จ ค่า timestamp ที่แสดง (`38210`, `52140`) เป็นตัวเลขสมมติเพื่อความสมจริงของรูปแบบ ไม่ใช่เวลาจริง
+> มีเพียง**แถวที่ 2 เท่านั้นที่เป็นข้อมูลจริง**ที่ยืนยันจากการทดลองบนบอร์ดจริง (`PROV_0E01D0`)
 
 ---
 
