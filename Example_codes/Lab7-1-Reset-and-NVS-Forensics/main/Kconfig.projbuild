@@ -1,0 +1,10 @@
+menu "Example Configuration"
+
+    config EXAMPLE_RESET_PROVISIONED
+        bool "Reset Provisioned state (Erase credentials)"
+        default n
+        help
+            Reset the Wi-Fi provisioning state on every boot.
+            This is useful for testing and development.
+
+endmenu
