@@ -141,6 +141,8 @@ wifi_prov_mgr_endpoint_register("custom-data", custom_prov_data_handler, NULL);
 3. จุดแยกทางเลือก (Branching):
    - หาก PoP ไม่ตรง $\rightarrow$ Trigger Event `PROTOCOMM_SECURITY_SESSION_CREDENTIALS_MISMATCH` และปฏิเสธการเชื่อมต่อ
    - หาก PoP ถูกต้อง $\rightarrow$ Trigger Event `PROTOCOMM_SECURITY_SESSION_SETUP_OK` และสร้าง AES Session Key สำเร็จ
+   
+<img width="750" height="960" alt="image" src="https://github.com/user-attachments/assets/495fca6e-1967-42b9-af5a-2e33f8fd44f1" />
 
 ### ภารกิจที่ 2: ผังการรับส่งข้อมูลผ่าน Custom Endpoint (Custom Data Handler Flow)
 ให้นักศึกษาวาด Sequence / Data Flow ของฟังก์ชัน `custom_prov_data_handler()`:
@@ -149,9 +151,9 @@ wifi_prov_mgr_endpoint_register("custom-data", custom_prov_data_handler, NULL);
 3. การจัดสรรหน่วยความจำแบบไดนามิกด้วย `strdup()` ให้กับ `*outbuf`
 4. ทำไมตัวแปร `*outbuf` จึงต้องจัดสรรใน Heap Memory (ทำไมจึงใช้ตัวแปร Local Static Array ธรรมดาไม่ได้)?
 
-```text
-[พื้นที่สำหรับแนบรูปภาพ Diagram ที่นักศึกษาเขียนขึ้นด้วย Draw.io / Mermaid / วาดมือ]
-```
+
+<img width="960" height="300" alt="image" src="https://github.com/user-attachments/assets/e305e691-6b81-4fd0-ad00-8f6065a881e0" />
+
 
 ---
 
@@ -159,15 +161,27 @@ wifi_prov_mgr_endpoint_register("custom-data", custom_prov_data_handler, NULL);
 
 | สถานการณ์ทดสอบ | ค่า PoP ที่ป้อน | ผลลัพธ์บนแอปมือถือ | ข้อความ Log ใน Serial Monitor |
 | :--- | :--- | :--- | :--- |
-| **1. ป้อน PoP ผิดพลาด** | `wrong1234` | | |
-| **2. ป้อน PoP ถูกต้อง** | `abcd1234` | | |
-| **3. ส่ง Custom Data** | `TEST_DATA_999` | | |
+| **1. ป้อน PoP ผิดพลาด** | `wrong1234` |ขึ้นแจ้งเตือนข้อผิดพลาด (Authentication Failed / Incorrect PoP) ไม่สามารถผ่านเข้าหน้าตั้งค่า Wi-Fi ได้ |E (...) app: Received incorrect username and/or PoP for establishing secure session! |
+| **2. ป้อน PoP ถูกต้อง** | `abcd1234` |เชื่อมต่อสำเร็จ ผ่านเข้าสู่หน้าเลือกเครือข่าย Wi-Fi ได้ปกติ | I (...) app: Secured session established! |
+| **3. ส่ง Custom Data** | `TEST_DATA_999` |ขึ้นสถานะตอบกลับสำเร็จ (ACK / Success) จากอุปกรณ์ | I (...) app: Received custom data: TEST_DATA_999 |
 
 ---
 
 ## 8. คำถามท้ายการทดลอง (Post-Lab Questions)
 1. การใช้ **Proof-of-Possession (PoP)** ช่วยป้องกันการโจมตีประเภทใดได้บ้าง?
+```
+ช่วยป้องกันการโจมตีแบบสวมรอย (Rogue Provisioning / Man-in-the-Middle Attack) และการแอบอ้างเชื่อมต่อจากบุคคลภายนอกที่ไม่ได้รับอนุญาตซึ่งไม่มีรหัสผ่านประจำเครื่องหรือสแกน QR Code ไม่ได้ นอกจากนี้ยังป้องกันการสแกลนสปูฟ (Spoofing) เพื่อขโมยการตั้งค่า Wi-Fi ในบริเวณใกล้เคียง
+```
 2. หากไม่มีการใช้ PoP (เช่น ใน Security 0) ผู้โจมตีที่อยู่ในรัศมีสัญญาณบลูทูธสามารถทำสิ่งใดกับอุปกรณ์ได้บ้าง?
+```
+ผู้โจมตีที่อยู่ในรัศมีสัญญาณสามารถเชื่อมต่อเข้ามายังอุปกรณ์ได้ทันทีโดยไม่ต้องผ่านการยืนยันตัวตน เพื่อยิงรหัสผ่าน Wi-Fi ปลอมเข้าไปขัดขวางการทำงาน (Denial of Service - DoS) หรือแอบป้อน Credentials เพื่อหลอกให้อุปกรณ์เชื่อมต่อไปยัง Access Point ปลอมของผู้โจมตีเพื่อดักจับข้อมูล (Traffic Sniffing)
+```
 3. ในการประยุกต์ใช้งานเชิงพาณิชย์จริง เราสามารถนำ **Custom Data Endpoint** ไปใช้ส่งข้อมูลประเภทใดได้อีกบ้าง (ยกตัวอย่าง 2 กรณี)?
+```
+1. การตั้งค่าระบบ Cloud/MQTT: ส่งข้อมูล Broker Endpoint URL, Port Number และ Client Certificate/Private Key เพื่อให้อุปกรณ์นำไปใช้เชื่อมต่อกับเซิร์ฟเวอร์เฉพาะของลูกค้าแต่ละรายได้ทันที
+2. การผูกบัญชีผู้ใช้ (Device Binding): ส่ง User ID / User Token หรือ Device Registration Key เพื่อผูกอุปกรณ์ชิ้นนี้เข้ากับบัญชีผู้ใช้ในแอปพลิเคชันหลังจบกระบวนการ Setup
+```
 4. ในฟังก์ชัน `custom_prov_data_handler()` เหตุใดหน่วยความจำที่จัดสรรให้ `*outbuf` จึงถูก Free โดย Protocomm Layer อัตโนมัติหลังจากส่งข้อมูลเสร็จ?
-
+```
+เนื่องจากสถาปัตยกรรมของ Protocomm Layer ถูกออกแบบมาให้เป็นผู้รับผิดชอบวงจรชีวิต (Lifecycle) ของบัฟเฟอร์ขาออกทั้งหมด เมื่อ Callback Handler สร้างและคืนค่าพอยเตอร์ outbuf กลับมา Protocomm จะนำข้อมูลนั้นไปประมวลผล เข้ารหัส และส่งไปยังสมาร์ตโฟน เมื่อเสร็จสิ้นกระบวนการ Protocomm จะสั่งสั่งคืนพื้นที่ (Free) บัฟเฟอร์ดังกล่าวโดยอัตโนมัติ เพื่อป้องกันปัญหาหน่วยความจำรั่วไหล (Memory Leak) ในตัวอุปกรณ์
+```

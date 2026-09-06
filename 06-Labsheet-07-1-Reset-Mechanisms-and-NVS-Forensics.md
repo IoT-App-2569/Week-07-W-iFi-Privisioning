@@ -175,30 +175,63 @@ void app_main(void)
 4. การเรียกฟังก์ชัน `wifi_prov_mgr_is_provisioned(&provisioned)`
 5. จุดแยกสายการทำงานเข้าสู่โหมด **Provisioning Mode** หรือ **Station Mode**
 
-```text
-[พื้นที่สำหรับแนบรูปภาพ Flowchart ที่นักศึกษาเขียนขึ้นด้วย Draw.io / Mermaid / วาดมือ]
-```
+<img width="804" height="494" alt="image" src="https://github.com/user-attachments/assets/6960e990-aa24-49c9-991a-d8086d4da93a" />
+
 
 ### ภารกิจที่ 2 ผังสถานะการเปลี่ยนจังหวะไฟ LED 1 (Wi-Fi STA Indicator)
 ให้นักศึกษาวาด State Diagram แสดงการเปลี่ยนสถานะของ **LED 1 (GPIO 2)**:
 - เงื่อนไขใดทำให้ LED 1 เข้าสู่สถานะ `LED_STA_MODE_DISCONNECTED` (กระพริบ 200ms Mark / 200ms Space)
 - เงื่อนไขหรือ Event ใดทำให้เปลี่ยนเป็น `LED_STA_MODE_CONNECTED` (Heartbeat 200ms ทุก 1s)
 
+```
+stateDiagram-v2
+    [*] --> LED_STA_OFF : เริ่มทำงาน (Initial State)
+    
+    LED_STA_OFF --> LED_STA_DISCONNECTED : เมื่อเกิด Event <br> WIFI_EVENT_STA_START
+    
+    LED_STA_DISCONNECTED --> LED_STA_CONNECTED : เมื่อได้รับ IP Address <br> (IP_EVENT_STA_GOT_IP)
+    
+    LED_STA_CONNECTED --> LED_STA_DISCONNECTED : เมื่อสัญญาณหลุด <br> (WIFI_EVENT_STA_DISCONNECTED)
+    
+    note right of LED_STA_DISCONNECTED
+        รูปแบบ: กระพริบเร็ว (Alert)
+        - ติด 200ms
+        - ดับ 200ms
+    end note
+    
+    note right of LED_STA_CONNECTED
+        รูปแบบ: จังหวะหัวใจ (Heartbeat)
+        - ติด 200ms
+        - ดับ 800ms
+    end note
+```
 ---
 
 ## 6. ตารางบันทึกผลการทดลอง (Experiment Results)
 
 | รูปแบบการ Reset                  | คำสั่ง / พฤติกรรมที่ทำ               | พฤติกรรมของ LED แต่ละดวงหลังเปิดเครื่อง | สถานะใน Serial Monitor |
 | :------------------------------- | :----------------------------------- | :-------------------------------------- | :--------------------- |
-| **1. CLI Erase**                 | `idf.py erase-flash`                 |                                         |                        |
-| **2. Menuconfig Flag**           | `CONFIG_EXAMPLE_RESET_PROVISIONED=y` |                                         |                        |
-| **3. Hardware Button (GPIO 18)** | กดปุ่ม GPIO 18 ค้าง 3 วินาที         |                                         |                        |
+| **1. CLI Erase**                 | `idf.py erase-flash`                 |        LED ดับ       |     ไม่แสดง Log การทำงานปกติ บอร์ดไม่สามารถทำงานได้จนกว่าจะสั่ง idf.py flash ใหม่               |
+| **2. Menuconfig Flag**           | `CONFIG_EXAMPLE_RESET_PROVISIONED=y` |         LED 1 กระพริบเร็ว (DISCONNECTED/Alert) เพื่อรอการ Provisioning ใหม่เสมอทุกครั้งที่เปิดเครื่อง                             |             แสดงสถานะ Device is NOT provisioned (NVS is empty) และเริ่มกระบวนการ Provisioning           |
+| **3. Hardware Button (GPIO 18)** | กดปุ่ม GPIO 18 ค้าง 3 วินาที         |      LED 1 เปลี่ยนมากระพริบเร็ว (DISCONNECTED/Alert) เพื่อกลับเข้าสู่โหมด Provisioning                                   |              แสดงแจ้งเตือน >>> FACTORY RESET TRIGGERED! ERASING NVS FLASH <<< ตามด้วย Device is NOT provisioned          |
 
 ---
 
 ## 7. คำถามท้ายการทดลอง (Post-Lab Questions)
 1. เพราะเหตุใดการกดปุ่ม BOOT (GPIO 0) ค้างไว้ในจังหวะรีเซ็ตบอร์ด จึงทำให้โปรแกรมค้างอยู่ที่ ROM Bootloader และไม่ยอมทำงานต่อ?
+```
+ขา GPIO 0 บนชิป ESP32 ทำหน้าที่เป็น Strapping Pin สำหรับเลือกโหมดการบูต หากขานี้มีสถานะลอจิกเป็น Low (0) ในช่วงที่จ่ายไฟหรือรีเซ็ต ชิปจะเข้าใจว่าผู้ใช้ต้องการเข้าสู่โหมด "ROM Serial Bootloader" เพื่อรอรับการแฟลชโปรแกรมใหม่ผ่านทาง USB/UART ทำให้ตัวประมวลผลหยุดทำงาน และไม่ยอมเข้าไปรันคำสั่งในฟังก์ชัน app_main() ตามปกติ
+```
 2. เพราะเหตุใดคำสั่ง `idf.py erase-flash` จึงทำให้ข้อมูลเฟิร์มแวร์ Application หายไปด้วย ในขณะที่ `nvs_flash_erase()` ไม่ทำให้เฟิร์มแวร์หาย?
+```
+คำสั่ง idf.py erase-flash เป็นการสั่งลบข้อมูลแบบหมดจด (Wipe) ทุก Partition บนหน่วยความจำ Flash ตั้งแต่ Address แรกจนถึงสุดท้าย รวมถึงพาร์ทิชัน Bootloader, Partition Table และ ตัวโปรแกรมหลัก (Application) ในขณะที่ฟังก์ชัน nvs_flash_erase() เป็นคำสั่งทางซอฟต์แวร์ที่เจาะจงลบข้อมูลเฉพาะในพื้นที่พาร์ทิชันที่ชื่อว่า "nvs" (Non-Volatile Storage) เท่านั้น ซึ่งเป็นที่เก็บข้อมูล Credentials และค่าคอนฟิกต่างๆ โดยไม่กระทบกับพื้นที่พาร์ทิชัน "factory" หรือ "app" ที่เก็บตัวโปรแกรมหลัก
+```
 3. การออกแบบปุ่ม Factory Reset บนอุปกรณ์ IoT เชิงพาณิชย์ เหตุใดจึงต้องกำหนดให้ผู้ใช้กดปุ่มค้างไว้ 3-5 วินาที แทนที่จะสั่งลบข้อมูลทันทีที่แตะปุ่มเพียงเสี้ยววินาที?
+```
+เพื่อป้องกันความผิดพลาดจากการเผลอไปโดนปุ่มโดยไม่ได้ตั้งใจ (Accidental Press) เช่น มือไปปัดโดน ปุ่มถูกกดทับระหว่างการขนย้าย หรือเกิดสัญญาณรบกวนทางไฟฟ้า (Debounce/Noise) การหน่วงเวลา 3-5 วินาทีช่วยยืนยันเจตนาที่แท้จริงของผู้ใช้ว่าต้องการล้างข้อมูลสำคัญ (เช่น ค่าการเชื่อมต่อ Wi-Fi และบัญชีผู้ใช้) และย้อนระบบกลับสู่ค่าเริ่มต้นจากโรงงานจริงๆ
+```
 4. หากอุปกรณ์ IoT ถูกติดตั้งอยู่บนเสาสูงหรือฝังอยู่ในผนัง วิธีการ Reset ทางกายภาพรูปแบบใดเหมาะสมที่สุด?
+```
+การใช้เทคนิค "Power-Cycle Reset Sequence" (การตัดและจ่ายไฟตามจังหวะที่กำหนด) โดยผู้ใช้สามารถสั่งรีเซ็ตได้จากการสับเบรกเกอร์หรือถอดปลั๊ก-เสียบใหม่ติดต่อกัน เช่น ปิด-เปิดไฟ 5 ครั้งติดต่อกันภายในเวลาที่กำหนด โปรแกรมในอุปกรณ์จะนับรอบการรีบูตและสั่งล้างข้อมูล Factory Reset ให้เองอัตโนมัติ โดยไม่ต้องสัมผัสหรือกดปุ่มที่ตัวอุปกรณ์โดยตรง
+```
 
