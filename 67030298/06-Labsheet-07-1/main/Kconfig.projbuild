@@ -1,0 +1,7 @@
+menu "Example Configuration"
+    config EXAMPLE_RESET_PROVISIONED
+        bool "Reset Provisioned state (Erase credentials)"
+        default n
+        help
+            If this option is enabled, the device will erase the provisioned credentials on every boot.
+endmenu

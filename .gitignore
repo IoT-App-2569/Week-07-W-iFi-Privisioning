@@ -1,1 +1,39 @@
-**/build/**
+# ESP-IDF specific
+build/
+**/build/
+sdkconfig
+sdkconfig.old
+dependencies.lock
+managed_components/
+*.map
+*.elf
+*.bin
+*.hex
+
+# C/C++ objects and archives
+*.o
+*.a
+*.so
+*.obj
+*.lib
+*.dll
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+.obsidian/
