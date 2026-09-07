@@ -114,6 +114,10 @@ I (26120) app: Connected with IP Address: 192.168.1.155
 - **Primary Service (128-bit UUID: `021a9004-...`)**
   - **Characteristic UUIDs** แต่ละตัว
   - **Descriptor 0x2901 (User Description)** ที่ผูกเข้ากับ Protocomm Endpoints (`prov-session`, `prov-config`, `prov-scan`, `proto-ver`, `custom-data`)
+  - 
+
+<img width="1272" height="642" alt="image" src="https://github.com/user-attachments/assets/831fe79a-9093-4288-90dc-e1105069d308" />
+
 
 ### ภารกิจที่ 2: ผังลำดับการคืนหน่วยความจำ Bluetooth (BLE Lifecycle & Memory Reclaim Flow)
 ให้นักศึกษาวาด Flowchart / Sequence แสดงว่า:
@@ -121,9 +125,9 @@ I (26120) app: Connected with IP Address: 192.168.1.155
 2. เมื่อเชื่อมต่อ Wi-Fi สำเร็จ (`WIFI_PROV_CRED_SUCCESS`) $\rightarrow$ เกิด Event `WIFI_PROV_END`
 3. Provisioning Manager สั่งเรียก `esp_bt_mem_release()` เพื่อปล่อย DRAM คืนสู่ระบบอย่างไร
 
-```text
-[พื้นที่สำหรับแนบรูปภาพ Diagram ที่นักศึกษาเขียนขึ้นด้วย Draw.io / Mermaid / วาดมือ]
-```
+
+<img width="1693" height="742" alt="image" src="https://github.com/user-attachments/assets/1c8222c4-b6a1-4651-8fa6-55278a691790" />
+
 
 ---
 
@@ -131,16 +135,24 @@ I (26120) app: Connected with IP Address: 192.168.1.155
 
 | รายการตรวจสอบ | ผลการทดลอง / ข้อมูลที่สังเกตได้ |
 | :--- | :--- |
-| **1. BLE Device Name ที่สแกนเจอ** | `PROV_`.............................. |
-| **2. Primary Service UUID (128-bit)** | ..................................................... |
-| **3. Characteristic Endpoint ที่พบ (0x2901)** | 1. ..................................................<br/>2. ..................................................<br/>3. .................................................. |
-| **4. พฤติกรรมไฟ LED 2 (GPIO 4) ช่วงรอ vs ช่วงต่อ BLE** | ช่วงรอ: .......................................<br/>ช่วงต่อ: ....................................... |
-| **5. พฤติกรรมเมื่อต่อ Wi-Fi สำเร็จ** | มี Log คืนหน่วยความจำ Bluetooth หรือไม่? (มี / ไม่มี) |
+| **1. BLE Device Name ที่สแกนเจอ** | `PROV_`DACE4C |
+| **2. Primary Service UUID (128-bit)** |021A9004-0382-4AEA-BFF4-6B3F1C5ADFB4 |
+| **3. Characteristic Endpoint ที่พบ (0x2901)** | 1. prov-session <br/>2. prov-config <br/>3. prov-scan |
+| **4. พฤติกรรมไฟ LED 2 (GPIO 4) ช่วงรอ vs ช่วงต่อ BLE** | ช่วงรอ: กระพริบช้า <br/>ช่วงต่อ: กระพริบเร็ว |
+| **5. พฤติกรรมเมื่อต่อ Wi-Fi สำเร็จ** | มี Log คืนหน่วยความจำ Bluetooth หรือไม่? (มี / ไม่มี) |มี พบ Log BT memory released และ BTDM memory released คืนพื้นที่ DRAM ของ Bluetooth Stack กลับสู่ System Heap ทั้งหมดทันที|
 
 ---
 
 ## 7. คำถามท้ายการทดลอง (Post-Lab Questions)
 1. เหตุใด BLE Provisioning จึงไม่ส่งผลให้สัญญาณ Wi-Fi บนสมาร์ตโฟนของผู้ใช้หลุดระหว่างทำรายการ?
+```
+BLE กับ Wi-Fi แยกกัน มือถือใช้ BLE คุยกับ ESP32 และใช้ Wi-Fi เล่นเน็ต ต่างจาก SoftAP ที่ต้องสลับมาเชื่อม Wi-Fi กับ ESP32
+```
 2. Descriptor `0x2901` มีความสำคัญอย่างไรต่อการที่แอปพลิเคชันมือถือจะทราบว่า Characteristic แต่ละตัวใช้ทำหน้าที่อะไร?
+```
+เป็น Descriptor ที่เก็บ ชื่อ คำอธิบายของ Characteristic ทำให้แอปรู้ว่า Characteristic นั้นใช้ทำอะไร
+```
 3. การที่ ESP-IDF มีฟังก์ชัน `esp_bt_mem_release()` มีประโยชน์อย่างไรต่อการทำงานของแอปพลิเคชัน IoT หลังเชื่อมต่อ Wi-Fi สำเร็จ?
-
+```
+คืน RAM ที่ Bluetooth ไม่ใช้แล้ว ทำให้ ESP32 มี RAM เหลือไปทำงานอื่นมากขึ้น
+```

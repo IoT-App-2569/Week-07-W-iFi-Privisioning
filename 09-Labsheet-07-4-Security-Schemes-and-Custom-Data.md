@@ -142,6 +142,10 @@ wifi_prov_mgr_endpoint_register("custom-data", custom_prov_data_handler, NULL);
    - หาก PoP ไม่ตรง $\rightarrow$ Trigger Event `PROTOCOMM_SECURITY_SESSION_CREDENTIALS_MISMATCH` และปฏิเสธการเชื่อมต่อ
    - หาก PoP ถูกต้อง $\rightarrow$ Trigger Event `PROTOCOMM_SECURITY_SESSION_SETUP_OK` และสร้าง AES Session Key สำเร็จ
 
+
+<img width="877" height="872" alt="image" src="https://github.com/user-attachments/assets/dd705c7a-986c-43df-9199-cbf33c5c2b41" />
+
+
 ### ภารกิจที่ 2: ผังการรับส่งข้อมูลผ่าน Custom Endpoint (Custom Data Handler Flow)
 ให้นักศึกษาวาด Sequence / Data Flow ของฟังก์ชัน `custom_prov_data_handler()`:
 1. ข้อมูล `inbuf` ถูกส่งเข้ามาจากสมาร์ตโฟนผ่าน Protocomm
@@ -149,9 +153,8 @@ wifi_prov_mgr_endpoint_register("custom-data", custom_prov_data_handler, NULL);
 3. การจัดสรรหน่วยความจำแบบไดนามิกด้วย `strdup()` ให้กับ `*outbuf`
 4. ทำไมตัวแปร `*outbuf` จึงต้องจัดสรรใน Heap Memory (ทำไมจึงใช้ตัวแปร Local Static Array ธรรมดาไม่ได้)?
 
-```text
-[พื้นที่สำหรับแนบรูปภาพ Diagram ที่นักศึกษาเขียนขึ้นด้วย Draw.io / Mermaid / วาดมือ]
-```
+<img width="1601" height="747" alt="image" src="https://github.com/user-attachments/assets/a2af243a-8b79-46d7-acd4-e6c065cdbe69" />
+
 
 ---
 
@@ -159,15 +162,27 @@ wifi_prov_mgr_endpoint_register("custom-data", custom_prov_data_handler, NULL);
 
 | สถานการณ์ทดสอบ | ค่า PoP ที่ป้อน | ผลลัพธ์บนแอปมือถือ | ข้อความ Log ใน Serial Monitor |
 | :--- | :--- | :--- | :--- |
-| **1. ป้อน PoP ผิดพลาด** | `wrong1234` | | |
-| **2. ป้อน PoP ถูกต้อง** | `abcd1234` | | |
-| **3. ส่ง Custom Data** | `TEST_DATA_999` | | |
+| **1. ป้อน PoP ผิดพลาด** | `wrong1234` | <img width="828" height="1792" alt="Image (6)" src="https://github.com/user-attachments/assets/9cfa6d9e-dc53-4dea-9bcb-129441a8b408" />| <img width="832" height="152" alt="image" src="https://github.com/user-attachments/assets/15214128-d49f-42b5-be30-6e3dbb7aa51f" />|
+| **2. ป้อน PoP ถูกต้อง** | `abcd1234` | ขึ้นให้ select wi-fi network | <img width="835" height="100" alt="image" src="https://github.com/user-attachments/assets/40698f25-1d31-42e0-85b4-6ab24e524081" /> |
+| **3. ส่ง Custom Data** | `TEST_DATA_999` | แสดงข้อความตอบกลับที่ ESP32 ส่งมา คือ ACK_FROM_ESP32 | Received custom data: TEST_DATA_999 |
 
 ---
 
 ## 8. คำถามท้ายการทดลอง (Post-Lab Questions)
 1. การใช้ **Proof-of-Possession (PoP)** ช่วยป้องกันการโจมตีประเภทใดได้บ้าง?
+```
+ป้องกัน ผู้โจมตีที่ไม่ได้รับอนุญาต ไม่ให้เข้ามา Provision อุปกรณ์
+```
 2. หากไม่มีการใช้ PoP (เช่น ใน Security 0) ผู้โจมตีที่อยู่ในรัศมีสัญญาณบลูทูธสามารถทำสิ่งใดกับอุปกรณ์ได้บ้าง?
+```
+เข้าถึงกระบวนการ Provisioning และส่งข้อมูลไปยังอุปกรณ์ได้
+```
 3. ในการประยุกต์ใช้งานเชิงพาณิชย์จริง เราสามารถนำ **Custom Data Endpoint** ไปใช้ส่งข้อมูลประเภทใดได้อีกบ้าง (ยกตัวอย่าง 2 กรณี)?
+```
+1.ส่งข้อมูลการตั้งค่าอุปกรณ์ เช่น Device Name, Server URL 
+2.ส่งข้อมูลสำหรับลงทะเบียนอุปกรณ์ เช่น Device ID, License Key
+```
 4. ในฟังก์ชัน `custom_prov_data_handler()` เหตุใดหน่วยความจำที่จัดสรรให้ `*outbuf` จึงถูก Free โดย Protocomm Layer อัตโนมัติหลังจากส่งข้อมูลเสร็จ?
-
+```
+เพราะ Protocomm Layer เป็นผู้รับผิดชอบ Lifecycle ของ Buffer ที่ส่งออก หลังจากส่งข้อมูลให้ Client เรียบร้อย จึง Free ให้โดยอัตโนมัติ เพื่อป้องกัน Memory Leak 
+```
