@@ -152,6 +152,11 @@ wifi_prov_mgr_endpoint_register("custom-data", custom_prov_data_handler, NULL);
 ```text
 [พื้นที่สำหรับแนบรูปภาพ Diagram ที่นักศึกษาเขียนขึ้นด้วย Draw.io / Mermaid / วาดมือ]
 ```
+1.
+<img width="826" height="903" alt="แบบแผนที่ยังไม่ได้ตั้งชื่อ drawio" src="https://github.com/user-attachments/assets/c41325d9-92de-4ed6-a3d6-d8ef043cf8fd" />
+
+2.
+<img width="1145" height="743" alt="แบบแผนที่ยังไม่ได้ตั้งชื่อ drawio (1)" src="https://github.com/user-attachments/assets/3a54f2ef-83dc-4322-a9c0-cc0faed96340" />
 
 ---
 
@@ -159,15 +164,19 @@ wifi_prov_mgr_endpoint_register("custom-data", custom_prov_data_handler, NULL);
 
 | สถานการณ์ทดสอบ | ค่า PoP ที่ป้อน | ผลลัพธ์บนแอปมือถือ | ข้อความ Log ใน Serial Monitor |
 | :--- | :--- | :--- | :--- |
-| **1. ป้อน PoP ผิดพลาด** | `wrong1234` | | |
-| **2. ป้อน PoP ถูกต้อง** | `abcd1234` | | |
-| **3. ส่ง Custom Data** | `TEST_DATA_999` | | |
+| **1. ป้อน PoP ผิดพลาด** | `wrong1234` |E (160486) wifi_prov_mgr: STA Disconnected |E (160486) wifi_prov_mgr: Disconnect reason : 211 |
+| **2. ป้อน PoP ถูกต้อง** | `abcd1234` | E (160486) wifi_prov_mgr: STA Disconnected|E (160486) wifi_prov_mgr: Disconnect reason : 211 |
+| **3. ส่ง Custom Data** | `TEST_DATA_999` |E (160486) wifi_prov_mgr: STA Disconnected |E (160486) wifi_prov_mgr: Disconnect reason : 211 |
 
 ---
 
 ## 8. คำถามท้ายการทดลอง (Post-Lab Questions)
 1. การใช้ **Proof-of-Possession (PoP)** ช่วยป้องกันการโจมตีประเภทใดได้บ้าง?
+ป้องกันการแอบสวมรอยตั้งค่าและการดักฟังขโมยข้อมูล
 2. หากไม่มีการใช้ PoP (เช่น ใน Security 0) ผู้โจมตีที่อยู่ในรัศมีสัญญาณบลูทูธสามารถทำสิ่งใดกับอุปกรณ์ได้บ้าง?
+โจรสามารถแอบเชื่อมต่อเพื่อ สั่งให้อุปกรณ์ไปต่อ Wi-Fi ของโจร หรือ ดักขโมยรหัส Wi-Fi บ้านเรา
 3. ในการประยุกต์ใช้งานเชิงพาณิชย์จริง เราสามารถนำ **Custom Data Endpoint** ไปใช้ส่งข้อมูลประเภทใดได้อีกบ้าง (ยกตัวอย่าง 2 กรณี)?
+ส่ง User ID / Token เพื่อผูกอุปกรณ์เข้ากับบัญชีผู้ใช้
+ส่ง URL / IP เซิร์ฟเวอร์ เพื่อให้อุปกรณ์รู้ว่าจะต้องส่งข้อมูลไปที่ไหน
 4. ในฟังก์ชัน `custom_prov_data_handler()` เหตุใดหน่วยความจำที่จัดสรรให้ `*outbuf` จึงถูก Free โดย Protocomm Layer อัตโนมัติหลังจากส่งข้อมูลเสร็จ?
-
+ป้องกันปัญหา Memory Leak ระบบ Protocomm รับหน้าที่เคลียร์ RAM ให้เองโดยที่คนเขียนโค้ดไม่ต้องสั่งลบเอง

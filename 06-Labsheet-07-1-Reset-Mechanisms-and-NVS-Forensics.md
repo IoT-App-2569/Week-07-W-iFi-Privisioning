@@ -178,27 +178,43 @@ void app_main(void)
 ```text
 [พื้นที่สำหรับแนบรูปภาพ Flowchart ที่นักศึกษาเขียนขึ้นด้วย Draw.io / Mermaid / วาดมือ]
 ```
+<img width="493" height="2860" alt="ผังงานการตัดสินใจ" src="https://github.com/user-attachments/assets/b9d2bbe0-492c-484f-8d6d-1a89e926a2d5" />
+```
+```
 
 ### ภารกิจที่ 2 ผังสถานะการเปลี่ยนจังหวะไฟ LED 1 (Wi-Fi STA Indicator)
 ให้นักศึกษาวาด State Diagram แสดงการเปลี่ยนสถานะของ **LED 1 (GPIO 2)**:
 - เงื่อนไขใดทำให้ LED 1 เข้าสู่สถานะ `LED_STA_MODE_DISCONNECTED` (กระพริบ 200ms Mark / 200ms Space)
 - เงื่อนไขหรือ Event ใดทำให้เปลี่ยนเป็น `LED_STA_MODE_CONNECTED` (Heartbeat 200ms ทุก 1s)
 
+[ ไฟดับ (OFF) ]
+              |
+              | (เริ่มเชื่อมต่อ Wi-Fi)
+              v
+[ ไฟกระพริบเร็ว (DISCONNECTED) ]
+              |
+              | (ต่อเน็ตสำเร็จ ได้ IP)
+              v
+  [ ไฟกระพริบช้า (CONNECTED) ]
 ---
 
 ## 6. ตารางบันทึกผลการทดลอง (Experiment Results)
 
 | รูปแบบการ Reset                  | คำสั่ง / พฤติกรรมที่ทำ               | พฤติกรรมของ LED แต่ละดวงหลังเปิดเครื่อง | สถานะใน Serial Monitor |
 | :------------------------------- | :----------------------------------- | :-------------------------------------- | :--------------------- |
-| **1. CLI Erase**                 | `idf.py erase-flash`                 |                                         |                        |
-| **2. Menuconfig Flag**           | `CONFIG_EXAMPLE_RESET_PROVISIONED=y` |                                         |                        |
-| **3. Hardware Button (GPIO 18)** | กดปุ่ม GPIO 18 ค้าง 3 วินาที         |                                         |                        |
+| **1. CLI Erase**                 | `idf.py erase-flash`                 |                       ปกติ                  |  Device is NOT provisioned (NVS is empty)Ready for Provisioning Lab...                      |
+| **2. Menuconfig Flag**           | `CONFIG_EXAMPLE_RESET_PROVISIONED=y` |      ไม่ได้ทำ                                   |                        |
+| **3. Hardware Button (GPIO 18)** | กดปุ่ม GPIO 18 ค้าง 3 วินาที         |                                         |     Holding button... 1...2...3/3 seconds>>> FACTORY RESET TRIGGERED! <<<Device is NOT provisioned (NVS is empty)                   |           ปกติ
 
 ---
 
 ## 7. คำถามท้ายการทดลอง (Post-Lab Questions)
 1. เพราะเหตุใดการกดปุ่ม BOOT (GPIO 0) ค้างไว้ในจังหวะรีเซ็ตบอร์ด จึงทำให้โปรแกรมค้างอยู่ที่ ROM Bootloader และไม่ยอมทำงานต่อ?
+สถานะ GPIO 0 ที่เป็น LOW ตอนเริ่มทำงาน สั่งให้ชิปเข้าสู่โหมดรอรับการเบิร์นโปรแกรมใหม่ แทนที่จะไปรันโปรแกรมปกติ
 2. เพราะเหตุใดคำสั่ง `idf.py erase-flash` จึงทำให้ข้อมูลเฟิร์มแวร์ Application หายไปด้วย ในขณะที่ `nvs_flash_erase()` ไม่ทำให้เฟิร์มแวร์หาย?
+erase-flash ล้างข้อมูลหน่วยความจำ ทั้งชิป
+nvs_flash_erase() ลบเฉพาะ พาร์ติชันตั้งค่าตัวโปรแกรมหลักจึงยังอยู่
 3. การออกแบบปุ่ม Factory Reset บนอุปกรณ์ IoT เชิงพาณิชย์ เหตุใดจึงต้องกำหนดให้ผู้ใช้กดปุ่มค้างไว้ 3-5 วินาที แทนที่จะสั่งลบข้อมูลทันทีที่แตะปุ่มเพียงเสี้ยววินาที?
+ป้องกันผู้ใช้เผลอไปกดโดนโดยไม่ได้ตั้งใจ จะทำให้ค่าที่เซ็ตไว้สูญหาย
 4. หากอุปกรณ์ IoT ถูกติดตั้งอยู่บนเสาสูงหรือฝังอยู่ในผนัง วิธีการ Reset ทางกายภาพรูปแบบใดเหมาะสมที่สุด?
-
+ปิด-เปิดเบรกเกอร์/สวิตช์ไฟติดกันหลายๆ ครั้งตามจังหวะที่กำหนด
