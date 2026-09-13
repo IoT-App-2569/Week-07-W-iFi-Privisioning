@@ -483,3 +483,5 @@ $RECYCLE.BIN/
 /Example_codes/Lab7-1-Reset-and-NVS-Forensics/build-v5
 /Example_codes/Lab7-1-Reset-and-NVS-Forensics/build
 /Example_codes/Lab7-3-BLE-Provisioning/build
+/Example_codes/Lab7-2-SoftAP-Provisioning/build
+/Example_codes/Lab7-4-Custom-Data-and-Security/build
