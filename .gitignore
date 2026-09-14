@@ -1,1 +1,12 @@
 **/build/**
+
+# ESP-IDF generated dependencies and local configuration backup
+**/managed_components/
+**/sdkconfig.old
+
+# Local Python and IDE artifacts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.idea/
+.DS_Store
