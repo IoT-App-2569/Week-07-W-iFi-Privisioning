@@ -123,7 +123,7 @@ I (19850) app: Connected with IP Address: 192.168.1.150
 ```text
 [พื้นที่สำหรับแนบรูปภาพ Sequence Diagram ที่นักศึกษาเขียนขึ้นด้วย Draw.io / Mermaid / วาดมือ]
 ```
-![alt text](image/image.png)
+![alt text](/image/image.png)
 ---
 
 ## 6. ตารางบันทึกผลการทดลอง (Experiment Results)
