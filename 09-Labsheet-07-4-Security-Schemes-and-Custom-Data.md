@@ -176,8 +176,8 @@ wifi_prov_mgr_endpoint_register("custom-data", custom_prov_data_handler, NULL);
 
 3. ในการประยุกต์ใช้งานเชิงพาณิชย์จริง เราสามารถนำ **Custom Data Endpoint** ไปใช้ส่งข้อมูลประเภทใดได้อีกบ้าง (ยกตัวอย่าง 2 กรณี)?
 	**ตัวอย่างการใช้ Custom Data ในเชิงพาณิชย์:**
-		- ส่งค่า Device Registration Token / API Key เพื่อผูกบัญชีผู้ใช้กับ Cloud
-		- ส่งค่าพารามิเตอร์ตั้งต้นหน้างาน (เช่น Timezone, พิกัดสถานที่ติดตั้ง)
+	- ส่งค่า Device Registration Token / API Key เพื่อผูกบัญชีผู้ใช้กับ Cloud
+	- ส่งค่าพารามิเตอร์ตั้งต้นหน้างาน (เช่น Timezone, พิกัดสถานที่ติดตั้ง)
 
 4. ในฟังก์ชัน `custom_prov_data_handler()` เหตุใดหน่วยความจำที่จัดสรรให้ `*outbuf` จึงถูก Free โดย Protocomm Layer อัตโนมัติหลังจากส่งข้อมูลเสร็จ?
 	- **เพื่อให้ Protocomm Layer เป็นผู้จัดการวงจรชีวิตของหน่วยความจำ** และเคลียร์พื้นที่ทิ้งทันทีหลังส่งข้อมูลเสร็จ ป้องกันปัญหา Memory Leak
