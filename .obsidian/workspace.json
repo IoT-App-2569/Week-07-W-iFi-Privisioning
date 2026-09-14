@@ -1,0 +1,240 @@
+{
+  "main": {
+    "id": "86301eb80847f6cc",
+    "type": "split",
+    "children": [
+      {
+        "id": "ad812c8ee8218c19",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "f30c2744770a2de6",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "08-Labsheet-07-3-BLE-Provisioning-and-GATT-Forensics.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "08-Labsheet-07-3-BLE-Provisioning-and-GATT-Forensics"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "61f301374f04d878",
+    "type": "split",
+    "children": [
+      {
+        "id": "3c2f3c9a47cc5d50",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "fe9819c1f2048159",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "1205fbffcc72a2a3",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "71cba29f3a3e9fc9",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "c61fc13c065e7a06",
+    "type": "split",
+    "children": [
+      {
+        "id": "5299e2e4cb91cfca",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "18889f0966d8e157",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "08-Labsheet-07-3-BLE-Provisioning-and-GATT-Forensics.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks"
+            }
+          },
+          {
+            "id": "ed1773741fb1c2c7",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "08-Labsheet-07-3-BLE-Provisioning-and-GATT-Forensics.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links"
+            }
+          },
+          {
+            "id": "a530e14c534b7a1b",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "ae038866d2ec0b0c",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          },
+          {
+            "id": "df002c5fa0c4fcd5",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "08-Labsheet-07-3-BLE-Provisioning-and-GATT-Forensics.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
+    }
+  },
+  "active": "f30c2744770a2de6",
+  "lastOpenFiles": [
+    "06-Labsheet-07-1-Reset-Mechanisms-and-NVS-Forensics.md",
+    "09-Labsheet-07-4-Security-Schemes-and-Custom-Data.md",
+    "67030109/09-Labsheet-07-4-Security-Schemes-and-Custom-Data.md",
+    "67030109/08-Labsheet-07-3-BLE-Provisioning-and-GATT-Forensics.md",
+    "67030109/07-Labsheet-07-2-SoftAP-Provisioning-and-HTTP-Sniffing.md",
+    "67030109/06-Labsheet-07-1-Reset-Mechanisms-and-NVS-Forensics.md",
+    "image/image-8.png",
+    "image/image-7.png",
+    "image-7.png",
+    "image-8.png",
+    "image-1.png",
+    "image.png",
+    "Example_codes/Lab7-4-Custom-Data-and-Security/build/log/idf_py_stdout_output_44704",
+    "Example_codes/Lab7-4-Custom-Data-and-Security/build/log/idf_py_stderr_output_44704",
+    "Example_codes/Lab7-4-Custom-Data-and-Security/build/log/idf_py_stdout_output_24064",
+    "Example_codes/Lab7-4-Custom-Data-and-Security/build/log/idf_py_stderr_output_24064",
+    "Example_codes/Lab7-4-Custom-Data-and-Security/build/CMakeFiles/lab7_4_custom_data_security.elf.rsp",
+    "Example_codes/Lab7-4-Custom-Data-and-Security/build/esp-idf/esp_hid/libesp_hid.a",
+    "Example_codes/Lab7-4-Custom-Data-and-Security/build/esp-idf/protocomm/libprotocomm.a",
+    "Example_codes/Lab7-4-Custom-Data-and-Security/build/esp-idf/esp_driver_sdmmc/libesp_driver_sdmmc.a",
+    "Example_codes/Lab7-4-Custom-Data-and-Security/build/esp-idf/bt/libbt.a",
+    "Example_codes/Lab7-4-Custom-Data-and-Security/build/esp-idf/esp_driver_sdspi/libesp_driver_sdspi.a",
+    "Example_codes/Lab7-4-Custom-Data-and-Security/managed_components/espressif__network_provisioning/tool/esp_prov/README.md",
+    "Example_codes/Lab7-4-Custom-Data-and-Security/managed_components/espressif__network_provisioning/examples/wifi_prov/README.md",
+    "Example_codes/Lab7-4-Custom-Data-and-Security/managed_components/espressif__network_provisioning/examples/thread_prov/README.md",
+    "Example_codes/Lab7-4-Custom-Data-and-Security/managed_components/espressif__network_provisioning/proto/README.md",
+    "Example_codes/Lab7-4-Custom-Data-and-Security/managed_components/espressif__network_provisioning/examples/README.md",
+    "Example_codes/Lab7-4-Custom-Data-and-Security/managed_components/espressif__network_provisioning/README.md",
+    "Example_codes/Lab7-4-Custom-Data-and-Security/managed_components/espressif__network_provisioning/CHANGELOG.md",
+    "Example_codes/Lab7-4-Custom-Data-and-Security/managed_components/espressif__cjson/cJSON/tests/unity/docs/UnityHelperScriptsGuide.md",
+    "Example_codes/Lab7-4-Custom-Data-and-Security/managed_components/espressif__cjson/cJSON/tests/unity/docs/UnityGettingStartedGuide.md",
+    "Example_codes/Lab7-4-Custom-Data-and-Security/managed_components/espressif__cjson/cJSON/tests/unity/docs/UnityConfigurationGuide.md",
+    "Example_codes/Lab7-4-Custom-Data-and-Security/managed_components/espressif__cjson/cJSON/tests/unity/docs/UnityAssertionsReference.md",
+    "Example_codes/Lab7-4-Custom-Data-and-Security/managed_components/espressif__cjson/cJSON/tests/unity/docs/ThrowTheSwitchCodingStandard.md",
+    "Example_codes/Lab7-4-Custom-Data-and-Security/managed_components/espressif__cjson/cJSON/tests/unity/README.md",
+    "Example_codes/Lab7-4-Custom-Data-and-Security/managed_components/espressif__cjson/cJSON/tests/json-patch-tests/README.md",
+    "Example_codes/Lab7-4-Custom-Data-and-Security/managed_components/espressif__cjson/cJSON/SECURITY.md",
+    "Example_codes/Lab7-4-Custom-Data-and-Security/managed_components/espressif__cjson/cJSON/README.md",
+    "Example_codes/Lab7-4-Custom-Data-and-Security/managed_components/espressif__cjson/cJSON/CONTRIBUTORS.md",
+    "Example_codes/Lab7-4-Custom-Data-and-Security/managed_components/espressif__cjson/cJSON/CHANGELOG.md",
+    "image/image-6.png",
+    "image/image-5.png",
+    "image/image-4.png",
+    "image-6.png",
+    "08-Labsheet-07-3-BLE-Provisioning-and-GATT-Forensics.md",
+    "07-Labsheet-07-2-SoftAP-Provisioning-and-HTTP-Sniffing.md"
+  ]
+}

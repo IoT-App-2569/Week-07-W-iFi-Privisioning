@@ -109,12 +109,14 @@ wifi_prov_mgr_endpoint_register("custom-data", custom_prov_data_handler, NULL);
      ```text
      E (15600) app: Received incorrect username and/or PoP for establishing secure session!
      ```
+     ![alt text](/image/image-7.png)
 4. **การทดสอบที่ 2 (ป้อน PoP ถูกต้อง):**
    - สั่งรีเซ็ตบอร์ดใหม่ และเปิดแอปป้อน PoP เป็น `abcd1234` (ตรงกับค่าในโค้ด)
    - สังเกต Log:
      ```text
      I (18200) app: Secured session established!
      ```
+     ![alt text](/image/image-8.png)
 
 ---
 
@@ -141,14 +143,14 @@ wifi_prov_mgr_endpoint_register("custom-data", custom_prov_data_handler, NULL);
 3. จุดแยกทางเลือก (Branching):
    - หาก PoP ไม่ตรง $\rightarrow$ Trigger Event `PROTOCOMM_SECURITY_SESSION_CREDENTIALS_MISMATCH` และปฏิเสธการเชื่อมต่อ
    - หาก PoP ถูกต้อง $\rightarrow$ Trigger Event `PROTOCOMM_SECURITY_SESSION_SETUP_OK` และสร้าง AES Session Key สำเร็จ
-
+![alt text](/image/image-4.png)
 ### ภารกิจที่ 2: ผังการรับส่งข้อมูลผ่าน Custom Endpoint (Custom Data Handler Flow)
 ให้นักศึกษาวาด Sequence / Data Flow ของฟังก์ชัน `custom_prov_data_handler()`:
 1. ข้อมูล `inbuf` ถูกส่งเข้ามาจากสมาร์ตโฟนผ่าน Protocomm
 2. การพิมพ์ข้อความ Log ด้วย `ESP_LOGI()`
 3. การจัดสรรหน่วยความจำแบบไดนามิกด้วย `strdup()` ให้กับ `*outbuf`
 4. ทำไมตัวแปร `*outbuf` จึงต้องจัดสรรใน Heap Memory (ทำไมจึงใช้ตัวแปร Local Static Array ธรรมดาไม่ได้)?
-
+![alt text](/image/image-5.png)
 ```text
 [พื้นที่สำหรับแนบรูปภาพ Diagram ที่นักศึกษาเขียนขึ้นด้วย Draw.io / Mermaid / วาดมือ]
 ```
@@ -157,17 +159,26 @@ wifi_prov_mgr_endpoint_register("custom-data", custom_prov_data_handler, NULL);
 
 ## 7. ตารางบันทึกผลการทดลอง (Experiment Results)
 
-| สถานการณ์ทดสอบ | ค่า PoP ที่ป้อน | ผลลัพธ์บนแอปมือถือ | ข้อความ Log ใน Serial Monitor |
-| :--- | :--- | :--- | :--- |
-| **1. ป้อน PoP ผิดพลาด** | `wrong1234` | | |
-| **2. ป้อน PoP ถูกต้อง** | `abcd1234` | | |
-| **3. ส่ง Custom Data** | `TEST_DATA_999` | | |
+| สถานการณ์ทดสอบ          | ค่า PoP ที่ป้อน | ผลลัพธ์บนแอปมือถือ                                                                 | ข้อความ Log ใน Serial Monitor                                                                                     |
+| :---------------------- | :-------------- | :--------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------- |
+| **1. ป้อน PoP ผิดพลาด** | `wrong1234`     | นข้อความแจ้งเตือนความผิดพลาด (Authentication/Security Error) และปฏิเสธการเชื่อมต่อ | `E (139614) security1: Key mismatch. Close connection` และ `[SECURITY ALERT]: INVALID PoP / Unauthorized Access!` |
+| **2. ป้อน PoP ถูกต้อง** | `abcd1234`      | ยืนยันตัวตนสำเร็จ อนุญาตให้ส่งค่าพารามิเตอร์ Wi-Fi และเชื่อมต่อสำเร็จ              | `[SECURITY SUCCESS]: Valid PoP! Secured Session OK!` และ `[SUCCESS]: Provisioning Completed!`                     |
+| **3. ส่ง Custom Data**  | `TEST_DATA_999` | ส่งข้อมูลชุด Custom Data (`TEST_DATA_999`) ไปยัง Custom Endpoint สำเร็จ            | I (22150) app: Received custom data: TEST_DATA_999                                                                |
 
 ---
 
 ## 8. คำถามท้ายการทดลอง (Post-Lab Questions)
 1. การใช้ **Proof-of-Possession (PoP)** ช่วยป้องกันการโจมตีประเภทใดได้บ้าง?
+	- **ป้องกันการโจมตีแบบ Man-in-the-Middle (MitM)** และการแอบอ้างสิทธิ์เข้าถึงอุปกรณ์จากบุคคลภายนอก
+
 2. หากไม่มีการใช้ PoP (เช่น ใน Security 0) ผู้โจมตีที่อยู่ในรัศมีสัญญาณบลูทูธสามารถทำสิ่งใดกับอุปกรณ์ได้บ้าง?
+	- **เชื่อมต่อ Bluetooth เข้ากับอุปกรณ์ได้อิสระ** โดยไม่ต้องยืนยันตัวตน และสามารถสั่งตั้งค่า Wi-Fi หรือเข้าถึงระบบได้ทันที
+
 3. ในการประยุกต์ใช้งานเชิงพาณิชย์จริง เราสามารถนำ **Custom Data Endpoint** ไปใช้ส่งข้อมูลประเภทใดได้อีกบ้าง (ยกตัวอย่าง 2 กรณี)?
+	**ตัวอย่างการใช้ Custom Data ในเชิงพาณิชย์:**
+	- ส่งค่า Device Registration Token / API Key เพื่อผูกบัญชีผู้ใช้กับ Cloud
+	- ส่งค่าพารามิเตอร์ตั้งต้นหน้างาน (เช่น Timezone, พิกัดสถานที่ติดตั้ง)
+
 4. ในฟังก์ชัน `custom_prov_data_handler()` เหตุใดหน่วยความจำที่จัดสรรให้ `*outbuf` จึงถูก Free โดย Protocomm Layer อัตโนมัติหลังจากส่งข้อมูลเสร็จ?
+	- **เพื่อให้ Protocomm Layer เป็นผู้จัดการวงจรชีวิตของหน่วยความจำ** และเคลียร์พื้นที่ทิ้งทันทีหลังส่งข้อมูลเสร็จ ป้องกันปัญหา Memory Leak
 
