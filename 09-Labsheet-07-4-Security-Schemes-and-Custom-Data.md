@@ -149,8 +149,9 @@ wifi_prov_mgr_endpoint_register("custom-data", custom_prov_data_handler, NULL);
 3. การจัดสรรหน่วยความจำแบบไดนามิกด้วย `strdup()` ให้กับ `*outbuf`
 4. ทำไมตัวแปร `*outbuf` จึงต้องจัดสรรใน Heap Memory (ทำไมจึงใช้ตัวแปร Local Static Array ธรรมดาไม่ได้)?
 
-```text
+``text
 [พื้นที่สำหรับแนบรูปภาพ Diagram ที่นักศึกษาเขียนขึ้นด้วย Draw.io / Mermaid / วาดมือ]
+![alt text](image-1.png)
 ```
 
 ---
@@ -158,16 +159,37 @@ wifi_prov_mgr_endpoint_register("custom-data", custom_prov_data_handler, NULL);
 ## 7. ตารางบันทึกผลการทดลอง (Experiment Results)
 
 | สถานการณ์ทดสอบ | ค่า PoP ที่ป้อน | ผลลัพธ์บนแอปมือถือ | ข้อความ Log ใน Serial Monitor |
+
 | :--- | :--- | :--- | :--- |
-| **1. ป้อน PoP ผิดพลาด** | `wrong1234` | | |
-| **2. ป้อน PoP ถูกต้อง** | `abcd1234` | | |
-| **3. ส่ง Custom Data** | `TEST_DATA_999` | | |
+
+| 1. ป้อน PoP ผิดพลาด** | `wrong1234` | Provisioning ไม่สำเร็จ / Secure Session ถูกปฏิเสธ | `Received incorrect username and/or PoP for establishing secure session!` |
+
+| 2. ป้อน PoP ถูกต้อง** | `abcd1234` | Provisioning สำเร็จและเข้าสู่ Secure Session | `Secured session established!` |
+
+| 3. ส่ง Custom Data** | `TEST_DATA_999` | ส่งข้อมูลสำเร็จและได้รับ ACK | `Received custom data: TEST_DATA_999` |
 
 ---
 
 ## 8. คำถามท้ายการทดลอง (Post-Lab Questions)
+
 1. การใช้ **Proof-of-Possession (PoP)** ช่วยป้องกันการโจมตีประเภทใดได้บ้าง?
+
+คำตอบ: PoP ช่วยป้องกันผู้ที่ไม่ได้รับอนุญาตไม่ให้เข้ามาทำ Provisioning กับ ESP32 โดยเฉพาะการพยายามสวมรอยเป็นผู้ใช้งานที่ถูกต้องหรือการเข้าถึงอุปกรณ์โดยผู้โจมตีที่อยู่ในบริเวณใกล้เคียง หากไม่มี PoP ผู้โจมตีอาจพยายามสร้าง Secure Session กับอุปกรณ์ได้ง่ายขึ้น
+
 2. หากไม่มีการใช้ PoP (เช่น ใน Security 0) ผู้โจมตีที่อยู่ในรัศมีสัญญาณบลูทูธสามารถทำสิ่งใดกับอุปกรณ์ได้บ้าง?
+
+คำตอบ: ผู้โจมตีที่อยู่ในระยะสัญญาณ Bluetooth อาจสามารถเชื่อมต่อกับอุปกรณ์และส่งข้อมูล Provisioning ได้โดยไม่ต้องพิสูจน์ว่าตนเป็นผู้ใช้งานที่ได้รับอนุญาต ซึ่งอาจทำให้สามารถตั้งค่า Wi-Fi ใหม่หรือส่งข้อมูลไปยัง Endpoint ที่เปิดใช้งานได้ ส่งผลให้เกิดความเสี่ยงต่อการควบคุมหรือการเข้าถึงอุปกรณ์โดยไม่ได้รับอนุญาต
+
 3. ในการประยุกต์ใช้งานเชิงพาณิชย์จริง เราสามารถนำ **Custom Data Endpoint** ไปใช้ส่งข้อมูลประเภทใดได้อีกบ้าง (ยกตัวอย่าง 2 กรณี)?
-4. ในฟังก์ชัน `custom_prov_data_handler()` เหตุใดหน่วยความจำที่จัดสรรให้ `*outbuf` จึงถูก Free โดย Protocomm Layer อัตโนมัติหลังจากส่งข้อมูลเสร็จ?
+
+คำตอบ:
+
+ใช้ส่ง Device ID หรือ Activation Code เพื่อระบุและลงทะเบียนอุปกรณ์กับระบบ Cloud หรือ Server
+ใช้ส่ง MQTT Broker URL หรือข้อมูลการตั้งค่า Server เพื่อให้อุปกรณ์สามารถเชื่อมต่อกับระบบ IoT ที่กำหนดไว้
+
+4. ในฟังก์ชัน custom_prov_data_handler() เหตุใดหน่วยความจำที่จัดสรรให้ \*outbuf จึงถูก Free โดย Protocomm Layer อัตโนมัติหลังจากส่งข้อมูลเสร็จ?
+
+คำตอบ: เนื่องจาก Protocomm Layer เป็นผู้รับผิดชอบในการจัดการ Buffer ที่ Handler สร้างขึ้นสำหรับใช้เป็นข้อมูลตอบกลับ เมื่อส่งข้อมูลไปยัง Client เสร็จแล้ว Protocomm จึงสามารถคืนหน่วยความจำของ Buffer นั้นได้ เพื่อป้องกันการเกิด Memory Leak และช่วยให้หน่วยความจำ Heap สามารถนำกลับมาใช้งานต่อได้
+
+---
 

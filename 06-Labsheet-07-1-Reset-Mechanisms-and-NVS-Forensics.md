@@ -175,8 +175,8 @@ void app_main(void)
 4. การเรียกฟังก์ชัน `wifi_prov_mgr_is_provisioned(&provisioned)`
 5. จุดแยกสายการทำงานเข้าสู่โหมด **Provisioning Mode** หรือ **Station Mode**
 
-```text
-[พื้นที่สำหรับแนบรูปภาพ Flowchart ที่นักศึกษาเขียนขึ้นด้วย Draw.io / Mermaid / วาดมือ]
+``
+![alt text](image.png)
 ```
 
 ### ภารกิจที่ 2 ผังสถานะการเปลี่ยนจังหวะไฟ LED 1 (Wi-Fi STA Indicator)
@@ -190,15 +190,25 @@ void app_main(void)
 
 | รูปแบบการ Reset                  | คำสั่ง / พฤติกรรมที่ทำ               | พฤติกรรมของ LED แต่ละดวงหลังเปิดเครื่อง | สถานะใน Serial Monitor |
 | :------------------------------- | :----------------------------------- | :-------------------------------------- | :--------------------- |
-| **1. CLI Erase**                 | `idf.py erase-flash`                 |                                         |                        |
-| **2. Menuconfig Flag**           | `CONFIG_EXAMPLE_RESET_PROVISIONED=y` |                                         |                        |
-| **3. Hardware Button (GPIO 18)** | กดปุ่ม GPIO 18 ค้าง 3 วินาที         |                                         |                        |
+| **1. CLI Erase**                 | `idf.py erase-flash`                 | LED ดับสนิท (ไม่ติดเลย) เนื่องจากเฟิร์มแวร์ทั้งหมดถูกลบไปด้วย ต้อง `idf.py flash` ใหม่ก่อนบอร์ดถึงจะเริ่มทำงานได้อีกครั้ง หลัง flash ใหม่ LED จะเข้าสู่โหมด "Not Provisioned" (ไม่ติดค้าง/รอ provisioning) | ไม่มี output ใดๆ เลยจนกว่าจะ flash เฟิร์มแวร์ใหม่ (เพราะ flash ทั้งชิปถูกลบว่างหมด รวม bootloader และ partition table) หลัง flash ใหม่จะขึ้น `[STATUS]: Device is NOT provisioned (NVS is empty)` |
+| **2. Menuconfig Flag**           | `CONFIG_EXAMPLE_RESET_PROVISIONED=y` | บอร์ด boot ปกติทันที (ไม่ต้องรอกดปุ่ม) LED เข้าสู่โหมด "Not Provisioned" ทันทีทุกครั้งที่เปิดเครื่อง เพราะระบบบังคับลบ credential ทุกรอบ boot | ขึ้น log `CONFIG_EXAMPLE_RESET_PROVISIONED is enabled — forcing reset` ตามด้วย `[FORENSIC]: User requested Flash Erase!` และ `[STATUS]: Device is NOT provisioned (NVS is empty)` โดยไม่มีการหน่วงเวลาเลย |
+| **3. Hardware Button (GPIO 18)** | กดปุ่ม GPIO 18 ค้าง 3 วินาที         | ระหว่างกดค้าง LED ยังอยู่ในสถานะเดิม (ยังไม่มีการเปลี่ยนแปลง) เมื่อครบ 3 วินาทีและปล่อยปุ่ม ระบบ erase NVS แล้ว LED เปลี่ยนไปสู่โหมด "Not Provisioned" | ขึ้น log นับถอยหลัง `Holding button... 1/3 seconds` → `2/3` → `3/3` (ห่างกันครั้งละ ~1000ms) ตามด้วย `>>> FACTORY RESET TRIGGERED! ERASING NVS FLASH <<<` และ `[STATUS]: Device is NOT provisioned (NVS is empty)` |
 
 ---
 
 ## 7. คำถามท้ายการทดลอง (Post-Lab Questions)
 1. เพราะเหตุใดการกดปุ่ม BOOT (GPIO 0) ค้างไว้ในจังหวะรีเซ็ตบอร์ด จึงทำให้โปรแกรมค้างอยู่ที่ ROM Bootloader และไม่ยอมทำงานต่อ?
+
+   GPIO 0 บนชิป ESP32 ไม่ใช่ขา GPIO ใช้งานทั่วไปเพียงอย่างเดียว แต่ยังทำหน้าที่เป็น **strapping pin** ที่ ROM bootloader อ่านค่าทันทีในช่วงเสี้ยววินาทีแรกหลัง reset เพื่อตัดสินใจว่าจะบูตแบบไหน: ถ้า GPIO0 = HIGH (ไม่กดปุ่ม) จะโหลดโปรแกรมจาก Flash ตามปกติ (SPI Boot mode) แต่ถ้า GPIO0 = LOW (กดค้างตอน reset) จะเข้าสู่ **UART Download Mode** ทันที เพื่อรอรับเฟิร์มแวร์ใหม่ผ่านสาย Serial แทน จึงทำให้โปรแกรม Application ที่อยู่ใน Flash ไม่ถูกโหลดขึ้นมารันเลย เพราะเป็นกลไกระดับฮาร์ดแวร์ที่ทำงานก่อน 2nd stage bootloader และ `app_main()` จะเริ่มทำงานด้วยซ้ำ
+
 2. เพราะเหตุใดคำสั่ง `idf.py erase-flash` จึงทำให้ข้อมูลเฟิร์มแวร์ Application หายไปด้วย ในขณะที่ `nvs_flash_erase()` ไม่ทำให้เฟิร์มแวร์หาย?
+
+   ความต่างอยู่ที่ขอบเขตการลบ: `idf.py erase-flash` เป็นคำสั่งจาก esptool ที่สั่งลบ **ทั้งชิป Flash แบบเต็มพื้นที่ (mass erase)** โดยไม่สนใจว่าพื้นที่ไหนคือ bootloader, partition table, application หรือ NVS ทำให้บอร์ดกลายเป็น "ว่างเปล่า" ต้อง flash ใหม่ทั้งหมด ในขณะที่ `nvs_flash_erase()` เป็น API ที่เรียกจากภายในโปรแกรมและทำงานผ่าน Partition Table โดยลบข้อมูลเฉพาะใน **พาร์ติชัน `nvs`** เท่านั้น ซึ่งเป็นคนละพื้นที่กับพาร์ติชัน `factory` ที่เก็บโค้ด Application จึงกระทบแค่ข้อมูล credential โดยตัวโปรแกรมยังอยู่ครบ
+
 3. การออกแบบปุ่ม Factory Reset บนอุปกรณ์ IoT เชิงพาณิชย์ เหตุใดจึงต้องกำหนดให้ผู้ใช้กดปุ่มค้างไว้ 3-5 วินาที แทนที่จะสั่งลบข้อมูลทันทีที่แตะปุ่มเพียงเสี้ยววินาที?
+
+   เพราะการ Reset เป็นการกระทำที่ทำลายข้อมูลแบบย้อนกลับไม่ได้ การหน่วงเวลาช่วย **ป้องกันการกดโดยไม่ตั้งใจ** (ปุ่มโดนกระแทกหรือโดนแตะระหว่างติดตั้ง) **ป้องกันสัญญาณรบกวนทางไฟฟ้า/mechanical bounce** ซึ่งมักมีระยะเวลาสั้นกว่ามาก และ **เปิดโอกาสให้ผู้ใช้ยกเลิกได้ทัน** หากสังเกตเห็นว่ากดผิด ช่วยลดผลกระทบทางธุรกิจจากการที่ผู้ใช้ต้อง provisioning ใหม่ทั้งหมดโดยไม่ตั้งใจ
+
 4. หากอุปกรณ์ IoT ถูกติดตั้งอยู่บนเสาสูงหรือฝังอยู่ในผนัง วิธีการ Reset ทางกายภาพรูปแบบใดเหมาะสมที่สุด?
 
+   เมื่อเข้าถึงปุ่มกายภาพไม่ได้โดยตรง ควรใช้วิธี Reset ทางอ้อม เช่น **Power-Cycle Pattern Detection** (เปิด-ปิดไฟซ้ำกันตามรูปแบบที่กำหนด เช่น 5 ครั้งใน 10 วินาที แล้วนับจำนวนครั้ง boot ที่เร็วผิดปกติเพื่อทริกเกอร์ reset) **Remote/Cloud-triggered Reset** ผ่านแอปมือถือหรือคำสั่งจาก cloud หรือ **Long-range Wireless Trigger** ผ่าน BLE/RF ระยะใกล้ โดยอุปกรณ์เชิงพาณิชย์ระดับสูงมักใช้ทั้ง Power-Cycle Pattern เป็น fallback หลักควบคู่กับ Remote Reset ผ่าน Cloud
