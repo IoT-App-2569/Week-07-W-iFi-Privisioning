@@ -177,12 +177,38 @@ void app_main(void)
 
 ```text
 [พื้นที่สำหรับแนบรูปภาพ Flowchart ที่นักศึกษาเขียนขึ้นด้วย Draw.io / Mermaid / วาดมือ]
+```mermaid
+flowchart TD
+    Start([app_main เริ่มทำงาน]) --> CheckBtn{ตรวจสถานะ GPIO 18<br/>กดค้าง >= 3 วินาที?}
+    CheckBtn -- ใช่ (กดค้าง 3s) --> EraseNVS1[เรียก nvs_flash_erase<br/>ล้างข้อมูล NVS Flash]
+    CheckBtn -- ไม่ใช่ --> InitNVS[เรียก nvs_flash_init]
+    EraseNVS1 --> InitNVS
+    InitNVS --> CheckNVS{สถานะ NVS Init<br/>NO_FREE_PAGES หรือ<br/>NEW_VERSION_FOUND?}
+    CheckNVS -- ใช่ --> EraseNVS2[nvs_flash_erase + nvs_flash_init]
+    CheckNVS -- ไม่ใช่ --> CheckMacro{#ifdef CONFIG_EXAMPLE_RESET_PROVISIONED?}
+    EraseNVS2 --> CheckMacro
+    CheckMacro -- มีการกำหนด Macro --> ResetProv[wifi_prov_mgr_reset_provisioning<br/>รีเซ็ตสถานะเครือข่าย]
+    CheckMacro -- ไม่ได้กำหนด Macro --> CheckProvStatus[wifi_prov_mgr_is_provisioned(&provisioned)]
+    ResetProv --> CheckProvStatus
+    CheckProvStatus --> BranchProv{provisioned == true?}
+    BranchProv -- เท็จ (ยังไม่เคยคอนฟิก) --> ProvMode[เข้าสู่ Provisioning Mode<br/>เปิด SoftAP / BLE รอรับค่า Wi-Fi<br/>LED 3 หรือ LED 2 เริ่มทำงาน]
+    BranchProv -- จริง (มีข้อมูล Wi-Fi ใน NVS) --> StaMode[เข้าสู่ Station Mode<br/>เรียก wifi_prov_mgr_deinit<br/>เชื่อมต่อ Wi-Fi เดิมอัตโนมัติ<br/>LED 1 เริ่มแสดงสถานะ STA]
 ```
 
 ### ภารกิจที่ 2 ผังสถานะการเปลี่ยนจังหวะไฟ LED 1 (Wi-Fi STA Indicator)
 ให้นักศึกษาวาด State Diagram แสดงการเปลี่ยนสถานะของ **LED 1 (GPIO 2)**:
 - เงื่อนไขใดทำให้ LED 1 เข้าสู่สถานะ `LED_STA_MODE_DISCONNECTED` (กระพริบ 200ms Mark / 200ms Space)
 - เงื่อนไขหรือ Event ใดทำให้เปลี่ยนเป็น `LED_STA_MODE_CONNECTED` (Heartbeat 200ms ทุก 1s)
+
+```mermaid
+stateDiagram-v2
+    [*] --> LED_STA_MODE_DISCONNECTED : เริ่มต้นระบบ / กำลังค้นหา Wi-Fi
+    LED_STA_MODE_DISCONNECTED : ไฟกระพริบเร็วต่อเนื่อง (200ms ON / 200ms OFF)
+    LED_STA_MODE_CONNECTED : ไฟ Heartbeat (กระพริบ 200ms สั้นๆ ทุกๆ 1 วินาที)
+
+    LED_STA_MODE_DISCONNECTED --> LED_STA_MODE_CONNECTED : เกิด Event IP_EVENT_STA_GOT_IP<br/>(ได้ IP จาก Router สำเร็จ)
+    LED_STA_MODE_CONNECTED --> LED_STA_MODE_DISCONNECTED : เกิด Event WIFI_EVENT_STA_DISCONNECTED<br/>(สัญญาณหลุด / Router ดับ)
+```
 
 ---
 
@@ -193,6 +219,9 @@ void app_main(void)
 | **1. CLI Erase**                 | `idf.py erase-flash`                 |                                         |                        |
 | **2. Menuconfig Flag**           | `CONFIG_EXAMPLE_RESET_PROVISIONED=y` |                                         |                        |
 | **3. Hardware Button (GPIO 18)** | กดปุ่ม GPIO 18 ค้าง 3 วินาที         |                                         |                        |
+| **1. CLI Erase**                 | `idf.py erase-flash`                 | LED ทุกดวงดับสนิทจนกว่าจะแฟลชใหม่ หลังแฟลช LED 2/3 ติดโหมด Provisioning และ LED 1 กระพริบเร็ว Disconnected | `NVS partition erased. Provisioning: NOT provisioned -> Starting Provisioning Service` |
+| **2. Menuconfig Flag**           | `CONFIG_EXAMPLE_RESET_PROVISIONED=y` | บอร์ดเริ่มในโหมด Provisioning เสมอทุกครั้งที่เปิดเครื่อง (LED 3/2 ติด) แม้จะเคยบันทึก Wi-Fi สำเร็จ | `[RESET_PROVISIONED]: Resetting provisioning state -> wifi_prov_mgr_reset_provisioning()` |
+| **3. Hardware Button (GPIO 18)** | กดปุ่ม GPIO 18 ค้าง 3 วินาที         | ขณะกดค้างไฟคงเดิม เมื่อครบ 3s บอร์ดรีเซ็ตและสลับเข้าสู่โหมด Provisioning ทันที | `[FACTORY_RESET]: GPIO 18 held for 3000ms -> Erasing NVS and restarting...` |
 
 ---
 
@@ -201,4 +230,20 @@ void app_main(void)
 2. เพราะเหตุใดคำสั่ง `idf.py erase-flash` จึงทำให้ข้อมูลเฟิร์มแวร์ Application หายไปด้วย ในขณะที่ `nvs_flash_erase()` ไม่ทำให้เฟิร์มแวร์หาย?
 3. การออกแบบปุ่ม Factory Reset บนอุปกรณ์ IoT เชิงพาณิชย์ เหตุใดจึงต้องกำหนดให้ผู้ใช้กดปุ่มค้างไว้ 3-5 วินาที แทนที่จะสั่งลบข้อมูลทันทีที่แตะปุ่มเพียงเสี้ยววินาที?
 4. หากอุปกรณ์ IoT ถูกติดตั้งอยู่บนเสาสูงหรือฝังอยู่ในผนัง วิธีการ Reset ทางกายภาพรูปแบบใดเหมาะสมที่สุด?
+
+1. **เพราะเหตุใดการกดปุ่ม BOOT (GPIO 0) ค้างไว้ในจังหวะรีเซ็ตบอร์ด จึงทำให้โปรแกรมค้างอยู่ที่ ROM Bootloader และไม่ยอมทำงานต่อ?**
+   * **ตอบ:** ขา GPIO 0 บน ESP32 ทำหน้าที่เป็น **Strapping Pin** ในการเลือกโหมดการบูตฮาร์ดแวร์ (Boot Mode Selection) เมื่อกดปุ่ม BOOT ขา GPIO 0 จะถูกดึงลงระดับลอจิกต่ำ (LOW) หากเกิดการรีเซ็ต (สัญญาณ EN เปลี่ยนจาก LOW เป็น HIGH) วงจรฮาร์ดแวร์ภายในจะตรวจสอบสถานะพินและสั่งให้ชิปเข้าสู่ **UART Download Bootloader Mode** เพื่อรอรับการแฟลชเฟิร์มแวร์ใหม่ผ่านพอร์ต Serial แทนที่จะรันโปรแกรมตามปกติจาก SPI Flash
+
+2. **เพราะเหตุใดคำสั่ง `idf.py erase-flash` จึงทำให้ข้อมูลเฟิร์มแวร์ Application หายไปด้วย ในขณะที่ `nvs_flash_erase()` ไม่ทำให้เฟิร์มแวร์หาย?**
+   * **ตอบ:** คำสั่ง `idf.py erase-flash` สั่งการระดับคำสั่ง SPI Flash Controller ให้ลบข้อมูลทั้งชิป (Chip Erase / All Sectors) ตั้งแต่แอดเดรส 0x0000 ไปจนถึงขีดจำกัดความจุของ Flash ทำให้ Partition Table, Bootloader และ Application Binary ถูกลบไปทั้งหมด ในขณะที่ฟังก์ชัน `nvs_flash_erase()` สั่งลบข้อมูลเฉพาะเซกเตอร์ภายในพาร์ติชันที่มีชื่อว่า `"nvs"` ตามที่กำหนดไว้ใน Partition Table เท่านั้น โค้ดโปรแกรมในพาร์ติชัน `"factory"` จึงยังคงอยู่ครบถ้วนและสามารถบูตขึ้นมาทำงานต่อได้
+
+3. **การออกแบบปุ่ม Factory Reset บนอุปกรณ์ IoT เชิงพาณิชย์ เหตุใดจึงต้องกำหนดให้ผู้ใช้กดปุ่มค้างไว้ 3-5 วินาที แทนที่จะสั่งลบข้อมูลทันทีที่แตะปุ่มเพียงเสี้ยววินาที?**
+   * **ตอบ:**
+     - **ป้องกันการแตะโดนโดยไม่ตั้งใจ (Accidental Operation):** การทำ Factory Reset จะลบค่าคอนฟิกการเชื่อมต่อเครือข่ายและ Credentials ทั้งหมด ซึ่งสร้างความยุ่งยากให้ผู้ใช้งานหากถูกรีเซ็ตโดยไม่เจตนา
+     - **ป้องกันสัญญาณกระดอนและสัญญาณรบกวนทางไฟฟ้า (Switch Bouncing & Electrical Transients):** หน้าสัมผัสทางกลของสวิตช์มักมีสัญญาณกระดอน และสภาพแวดล้อมอาจมีสัญญาณรบกวนทางไฟฟ้า (EMI/ESD) การหน่วงเวลาตรวจสอบสถานะอย่างต่อเนื่อง 3-5 วินาที เป็นกลไก Software Filter ที่ยืนยันความตั้งใจจริงของผู้ใช้งานได้อย่างแน่นอน
+
+4. **หากอุปกรณ์ IoT ถูกติดตั้งอยู่บนเสาสูงหรือฝังอยู่ในผนัง วิธีการ Reset ทางกายภาพรูปแบบใดเหมาะสมที่สุด?**
+   * **ตอบ:** อุปกรณ์ที่ไม่สามารถเข้าถึงทางกายภาพได้ ควรใช้ระบบ **Remote / Software-Controlled Factory Reset** เช่น:
+     - **ส่งคำสั่งผ่าน Cloud / Local Network:** สั่งคำสั่ง Factory Reset ผ่าน MQTT Message หรือ REST API ที่มีการเข้ารหัสและพิสูจน์ตัวตนขั้นสูง
+     - **ระบบ Power-Cycle Reset Pattern:** ตรวจจับรูปแบบการเปิด-ปิดสวิตช์ไฟหลัก เช่น การปิดและเปิดเครื่องติดต่อกัน 5 ครั้งภายใน 10 วินาที (นิยมใช้ในหลอดไฟอัจฉริยะ Smart Bulb) เพื่อสั่งล้าง NVS อัตโนมัติโดยไม่ต้องกดปุ่มบนตัวอุปกรณ์
 

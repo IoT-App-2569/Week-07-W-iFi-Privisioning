@@ -1,0 +1,9 @@
+menu "Example Configuration"
+
+    config EXAMPLE_RESET_PROVISIONED
+        bool "Reset Provisioned state (Erase credentials)"
+        default n
+        help
+            Erase NVS partition on startup to reset the provisioned state.
+
+endmenu
