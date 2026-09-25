@@ -122,7 +122,48 @@ I (26120) app: Connected with IP Address: 192.168.1.155
 3. Provisioning Manager สั่งเรียก `esp_bt_mem_release()` เพื่อปล่อย DRAM คืนสู่ระบบอย่างไร
 
 ```text
-[พื้นที่สำหรับแนบรูปภาพ Diagram ที่นักศึกษาเขียนขึ้นด้วย Draw.io / Mermaid / วาดมือ]
+graph TD
+    subgraph BLE_Device["ESP32 GATT Server (Device Name: PROV_XXXXXX)"]
+        direction TB
+        Service["Primary Service<br/>UUID: 021a9004-0382-4aea-bff4-6b3f1c5adfb4"]
+        
+        Char1["Characteristic 1 (...FF51)"]
+        Char2["Characteristic 2 (...FF52)"]
+        Char3["Characteristic 3 (...FF53)"]
+        Char4["Characteristic 4 (...FF54)"]
+        Char5["Characteristic 5 (...FF55)"]
+        
+        Desc1["Descriptor 0x2901:<br/>'prov-session'"]
+        Desc2["Descriptor 0x2901:<br/>'prov-config'"]
+        Desc3["Descriptor 0x2901:<br/>'prov-scan'"]
+        Desc4["Descriptor 0x2901:<br/>'proto-ver'"]
+        Desc5["Descriptor 0x2901:<br/>'custom-data'"]
+        
+        Service --> Char1 & Char2 & Char3 & Char4 & Char5
+        Char1 --- Desc1
+        Char2 --- Desc2
+        Char3 --- Desc3
+        Char4 --- Desc4
+        Char5 --- Desc5
+    end
+
+ผังลำดับการคืนหน่วยความจำ Bluetooth (BLE Lifecycle & Memory Reclaim Flow)
+
+Code snippet
+flowchart TD
+    Start["⚡ เริ่มต้นรัน BLE Provisioning (NimBLE Active)"] --> BLE_Conn["📱 มือถือเชื่อมต่อ BLE<br/>(Trigger: PROTOCOMM_TRANSPORT_BLE_CONNECTED)"]
+    BLE_Conn --> Status_LED["💡 LED 2 (GPIO 4) กระพริบเร็ว (100ms)"]
+    Status_LED --> Prov_Process["📥 รับข้อมูล Wi-Fi SSID / Password ผ่าน BLE"]
+    Prov_Process --> STA_Connect["📡 สลับเข้าโหมด Wi-Fi Station และเชื่อมต่อ Router"]
+    
+    STA_Connect --> Check_Success{"เชื่อมต่อสำเร็จ?<br/>(WIFI_PROV_CRED_SUCCESS)"}
+    Check_Success -- Yes --> Event_End["Event: WIFI_PROV_END"]
+    Check_Success -- No --> Prov_Process
+    
+    Event_End --> BT_Stop["1. ปิดระบบบริการ BLE (esp_bt_controller_disable)"]
+    BT_Stop --> Release_Mem["2. เรียกฟังก์ชัน esp_bt_mem_release(ESP_BT_MODE_BTDM)"]
+    Release_Mem --> Free_RAM["3. คืนหน่วยความจำ Bluetooth DRAM ทั้งหมดเข้าสู่ System Heap"]
+    Free_RAM --> App_Run["🚀 เข้าสู่การทำงานหลักของ App (Heap Memory ว่างเพิ่มขึ้น)"]
 ```
 
 ---
@@ -131,16 +172,25 @@ I (26120) app: Connected with IP Address: 192.168.1.155
 
 | รายการตรวจสอบ | ผลการทดลอง / ข้อมูลที่สังเกตได้ |
 | :--- | :--- |
-| **1. BLE Device Name ที่สแกนเจอ** | `PROV_`.............................. |
-| **2. Primary Service UUID (128-bit)** | ..................................................... |
-| **3. Characteristic Endpoint ที่พบ (0x2901)** | 1. ..................................................<br/>2. ..................................................<br/>3. .................................................. |
-| **4. พฤติกรรมไฟ LED 2 (GPIO 4) ช่วงรอ vs ช่วงต่อ BLE** | ช่วงรอ: .......................................<br/>ช่วงต่อ: ....................................... |
-| **5. พฤติกรรมเมื่อต่อ Wi-Fi สำเร็จ** | มี Log คืนหน่วยความจำ Bluetooth หรือไม่? (มี / ไม่มี) |
+| **1. BLE Device Name ที่สแกนเจอ** | `PROV_`PROV_XXXXXX |
+| **2. Primary Service UUID (128-bit)** | 021a9004-0382-4aea-bff4-6b3f1c5adfb4 |
+| **3. Characteristic Endpoint ที่พบ (0x2901)** | 1. prov-session.....<br/>2. prov-config<br/>3. prov-scan |
+| **4. พฤติกรรมไฟ LED 2 (GPIO 4) ช่วงรอ vs ช่วงต่อ BLE** | ช่วงรอ: ดับ หรือกระพริบช้าๆ รอการเชื่อมต่อ<br/>ช่วงต่อ: กระพริบถี่เร็วจังหวะ 100ms เมื่อรับส่งข้อมูล BLE |
+| **5. พฤติกรรมเมื่อต่อ Wi-Fi สำเร็จ** | มี Log คืนหน่วยความจำ Bluetooth หรือไม่? (มี / ไม่มี) | มี (ปรากฏ Log สั่งปิด Bluetooth และคืนหน่วยความจำ BT memory released / BTDM memory released)
 
 ---
 
 ## 7. คำถามท้ายการทดลอง (Post-Lab Questions)
 1. เหตุใด BLE Provisioning จึงไม่ส่งผลให้สัญญาณ Wi-Fi บนสมาร์ตโฟนของผู้ใช้หลุดระหว่างทำรายการ?
+   ```
+   เนื่องจากกระบวนการรับส่งข้อมูลคอนฟิก (SSID และ Password) ทำผ่านอินเทอร์เฟซ Bluetooth Low Energy (BLE) ซึ่งเป็นโปรโตคอลและตัวรับส่งสัญญาณคนละส่วนกับเครือข่าย Wi-Fi บนสมาร์ตโฟน ทำให้สมาร์ตโฟนสามารถคงการเชื่อมต่อกับ Wi-Fi บ้านเดิม
+   ```
 2. Descriptor `0x2901` มีความสำคัญอย่างไรต่อการที่แอปพลิเคชันมือถือจะทราบว่า Characteristic แต่ละตัวใช้ทำหน้าที่อะไร?
+   ```
+   Descriptor 0x2901 (Characteristic User Description) ทำหน้าที่เก็บข้อความสายอักขระ (User String) ที่ระบุชื่อ Endpoint แบบอ่านเข้าใจได้ เช่น "prov-session", "prov-config" เมื่อแอปพลิเคชันมือถือเชื่อมต่อเข้ากับ GATT Server จะสามารถอ่านค่าใน Descriptor นี้เพื่อแมป (Map) ได้ทันทีว่า Characteristic แต่ละตำแหน่งใช้สำหรับทำหน้าที่อะไรในการสื่อสาร Protocomm โดยไม่จำเป็นต้อง ฮาร์ดโค้ด (Hardcode) UUID 128-bit ที่ยาวและจำยากไว้ในโค้ดของแอปมือถือ
+   ```
 3. การที่ ESP-IDF มีฟังก์ชัน `esp_bt_mem_release()` มีประโยชน์อย่างไรต่อการทำงานของแอปพลิเคชัน IoT หลังเชื่อมต่อ Wi-Fi สำเร็จ?
+   ```
+   ฟังก์ชัน esp_bt_mem_release() จะสั่งคืนพื้นที่หน่วยความจำ DRAM ที่เคยถูกจองไว้ใช้สำหรับ Bluetooth Controller และ BT Stack (BTDM / NimBLE) กลับคืนสู่ระบบ System Heap ส่งผลให้ไมโครคอนโทรลเลอร์ ESP32 ได้รับ RAM ว่างกลับคืนมามหาศาล (หลายสิบถึงร้อย Kilobytes) ซึ่งมีความสำคัญอย่างยิ่งต่อการนำไปใช้รันแอปพลิเคชันหลักของ IoT เช่น การเชื่อมต่อเข้ารหัส TLS/SSL, การรันระบบ MQTT, Web Server หรือกระบวนการประมวลผลข้อมูลที่ต้องใช้ RAM สูงต่อไป
+   ```
 

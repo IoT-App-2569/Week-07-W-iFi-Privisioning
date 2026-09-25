@@ -121,7 +121,35 @@ I (19850) app: Connected with IP Address: 192.168.1.150
 - สถานะจังหวะการกระพริบของ **LED 3 (GPIO 5)** และ **LED 1 (GPIO 2)** ในแต่ละช่วง
 
 ```text
-[พื้นที่สำหรับแนบรูปภาพ Sequence Diagram ที่นักศึกษาเขียนขึ้นด้วย Draw.io / Mermaid / วาดมือ]
+sequenceDiagram
+    autonumber
+    actor User as 📱 Mobile App (ESP SoftAP Prov)
+    participant ESP as ⚡ ESP32 (SoftAP & Protocomm)
+    participant Router as 📡 Wi-Fi Router
+
+    Note over ESP: [Bootstrapping Phase]<br/>- SoftAP Active (SSID: PROV_XXXXXX, IP: 192.168.4.1)<br/>- LED 3 (GPIO 5): กระพริบช้า (Waiting Provisioning)<br/>- LED 1 (GPIO 2): ดับ (Disconnected)
+
+    User->>ESP: 1. Connect Wi-Fi SoftAP (SSID: PROV_XXXXXX)
+    Note over ESP: Trigger Event: WIFI_EVENT_AP_STACONNECTED
+
+    User->>ESP: 2. HTTP POST /prov-session (Send PoP: abcd1234)
+    Note over ESP: Trigger Event: PROTOCOMM_SECURITY_SESSION_SETUP_OK<br/>- LED 3 (GPIO 5): กระพริบถี่ (Session Setup OK)
+    ESP-->>User: HTTP 200 OK (Session Established)
+
+    User->>ESP: 3. HTTP POST /prov-scan (Scan Wi-Fi Networks)
+    ESP-->>User: HTTP 200 OK (List of SSIDs + RSSI)
+
+    User->>ESP: 4. HTTP POST /prov-config (Send Target SSID + Password)
+    Note over ESP: Trigger Event: WIFI_PROV_CRED_RECV
+    ESP-->>User: HTTP 200 OK (Credentials Received)
+
+    Note over ESP: Switch to Wi-Fi Station Mode
+    ESP->>Router: 5. Connect to Target Router AP
+    Router-->>ESP: Connection Established
+    Note over ESP: Trigger Event: WIFI_PROV_CRED_SUCCESS
+
+    Router-->>ESP: 6. Assign IP Address (DHCP)
+    Note over ESP: Trigger Event: IP_EVENT_STA_GOT_IP<br/>- LED 1 (GPIO 2): Heartbeat 200ms ทุก 1s (Connected)<br/>- LED 3 (GPIO 5): ดับลง (Close SoftAP)
 ```
 
 ---
@@ -130,17 +158,33 @@ I (19850) app: Connected with IP Address: 192.168.1.150
 
 | รายการตรวจสอบ | ค่าที่บันทึกได้จากการทดลอง |
 | :--- | :--- |
-| **1. ชื่อ SoftAP SSID ของ ESP32** | `PROV_`.............................. |
-| **2. รหัส PoP (Proof of Possession)** | ..................................................... |
-| **3. ข้อความใน QR Code Payload (JSON)** | ..................................................... |
-| **4. พฤติกรรมไฟ LED 3 (GPIO 5) ช่วงรอ vs ช่วงส่งข้อมูล** | ช่วงรอ: .......................................<br/>ช่วงส่ง: ....................................... |
-| **5. IP Address ที่ ESP32 ได้รับจาก Router** | ..................................................... |
-| **6. เวลาที่ใช้ตั้งแต่เริ่มจนจบกระบวนการ (วินาที)** | ..................................................... |
+| **1. ชื่อ SoftAP SSID ของ ESP32** | `PROV_`PROV_XXXXXX (เช่น PROV_35A2B0 ตามค่าที่แสดงใน Serial Monitor)    |
+| **2. รหัส PoP (Proof of Possession)** | abcd1234 |
+| **3. ข้อความใน QR Code Payload (JSON)** | {"ver":"v1","name":"PROV_XXXXXX","pop |
+| **4. พฤติกรรมไฟ LED 3 (GPIO 5) ช่วงรอ vs ช่วงส่งข้อมูล** | ช่วงรอ: กระพริบเป็นจังหวะช้าๆ รอรับการเชื่อมต่อ SoftAP.<br/>ช่วงส่ง: กระพริบถี่ขึ้นระหว่างแลกเปลี่ยนข้อมูล และดับลงเมื่อ Provisioning สำเร็จ |
+| **5. IP Address ที่ ESP32 ได้รับจาก Router** | 192.168.1.150  |
+| **6. เวลาที่ใช้ตั้งแต่เริ่มจนจบกระบวนการ (วินาที)** | ประมาณ 4 – 5 วินาที |
 
 ---
 
 ## 7. คำถามท้ายการทดลอง (Post-Lab Questions)
+
 1. ในโหมด SoftAP Scheme สมาร์ตโฟนส่งข้อมูลหา ESP32 ผ่านโปรโตคอลและ IP Address ใด?
+```
+โปรโตคอล (Protocol): ส่งผ่าน HTTP REST-like Endpoints (เช่น /prov-session, /prov-scan, /prov-config) บนชั้นสื่อสาร Protocomm Layer ซึ่งซ้อนอยู่บน TCP/IP ผ่านเครือข่าย Wi-Fi SoftAP   IP Address: ส่งไปยัง 192.168.4.1 (ซึ่งเป็น IP Address ค่าเริ่มต้นของ ESP32 เมื่อทำหน้าที่เป็น SoftAP / Access Point)
+
+```
 2. หากผู้ใช้ป้อนรหัสผ่าน Wi-Fi ผิดในแอปมือถือ จะเกิด Event ใดขึ้นบน ESP32 (`WIFI_PROV_CRED_FAIL` หรือไม่) และ ESP32 มีพฤติกรรมอย่างไร?
+```
+Event ที่เกิดขึ้น: เกิด Event WIFI_PROV_CRED_FAIL ขึ้นบน ESP32 (อันเนื่องมาจากชั้น Wi-Fi Driver ด้านล่างเกิด WIFI_EVENT_STA_DISCONNECTED จากความล้มเหลวในการยืนยันตัวตน / Handshake กับ Router)   พฤติกรรมของ ESP32:ESP32 จะส่งสถานะข้อผิดพลาด (Failure Status) ตอบกลับไปยังแอปพลิเคชันมือถือผ่านทาง HTTP Response ของ SoftAP เพื่อแจ้งว่ารหัสผ่านไม่ถูกต้อง   ESP32 จะ ไม่ ปิดโหมด SoftAP และยังคงรักษาสภาพแวดล้อม SoftAP พร้อม Endpoint ไว้ตามเดิม เพื่อรอรับการแก้ไขชื่อ SSID หรือ Password ชุดใหม่จากผู้ใช้อีกครั้งโดยไม่ต้องรีสตาร์ตบอร์ด
+```
 3. ทำไมผู้ผลิต IoT ส่วนใหญ่จึงมองว่ากระบวนการเชื่อมต่อแบบ SoftAP มีขั้นตอนที่ยุ่งยากสำหรับผู้ใช้ทั่วไปเมื่อเทียบกับ BLE?
+```
+กระบวนการ SoftAP มีจุดที่สร้างความยุ่งยากต่อผู้ใช้งาน (User Friction) มากกว่า BLE ใน 3 ประเด็นหลัก:
+ต้องสลับเครือข่าย Wi-Fi ด้วยตัวเอง (Manual Wi-Fi Switching): ผู้ใช้ต้องสลับออกจากแอปพลิเคชัน เข้าไปที่เมนูตั้งค่า Wi-Fi ของสมาร์ตโฟน เพื่อเลือกกดเชื่อมต่อ Hotspot ของอุปกรณ์ IoT (เช่น PROV_XXXXXX) ก่อน แล้วจึงสลับกลับเข้าแอป ในขณะที่ BLE สามารถค้นหาและเชื่อมต่อกับอุปกรณ์ได้เบื้องหลัง (Background Action) ทันทีภายในแอปโดยผู้ใช้ไม่ต้องสลับเมนู
+
+ปัญหาสัญญาณอินเทอร์เน็ตหลุดชั่วคราว (No Internet Access & OS Intervention): เนื่องจาก SoftAP ของ ESP32 ไม่มีอินเทอร์เน็ต ระบบปฏิบัติการมือถือ (iOS / Android) มักจะแจ้งเตือนว่า "No Internet Connection" หรือตัดการเชื่อมต่อจาก ESP32 กลับไปใช้ Mobile Data / Wi-Fi บ้านเดิมโดยอัตโนมัติ ทำให้กระบวนการ Provisioning หลุดกลางคัน
+
+ระยะเวลาและความเสถียรในการสลับโหมด: การเชื่อมต่อ Wi-Fi ใช้เวลาค้นหาและ Handshake นานกว่า BLE รวมถึงเมื่อตั้งค่าเสร็จ มือถือจะต้องใช้เวลาค้นหาและเชื่อมต่อกลับเข้า Wi-Fi เดิมของบ้านอีกครั้ง ทำให้ประสบการณ์ใช้งานไม่ราบรื่นเท่าการใช้ BLE
+```
 
