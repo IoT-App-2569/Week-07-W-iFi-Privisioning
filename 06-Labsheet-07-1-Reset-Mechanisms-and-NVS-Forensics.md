@@ -180,20 +180,20 @@ flowchart TD
     Start([เริ่ม app_main]) --> CheckButton{กดปุ่ม GPIO 18<br/>ค้าง 3 วินาทีมั้ย?}
     
     CheckButton -- กดค้าง --> EraseNVS1[ลบข้อมูล nvs_flash_erase] --> InitNVS[เริ่มทำงาน nvs_flash_init]
-    CheckButton --ไม่ได้กด --> InitNVS
+    CheckButton -- ไม่ได้กด --> InitNVS
     
     InitNVS --> CheckInit{Init ผ่านปกติมั้ย?}
-    CheckInit -- ไม่ผ่าน<br/>(เมมเต็ม / เวอร์ชั่นใหม่) --> EraseNVS2[สั่งลบ nvs_flash_erase] --> ReInitNVS[สั่ง nvs_flash_init อีกรอบ] --> CheckMacro
+    CheckInit -- ไม่ผ่าน<br/>เมมเต็ม หรือ เวอร์ชั่นใหม่ --> EraseNVS2[สั่งลบ nvs_flash_erase] --> ReInitNVS[สั่ง nvs_flash_init อีกรอบ] --> CheckMacro
     CheckInit -- ผ่านปกติ --> CheckMacro
     
     CheckMacro{#ifdef<br/>CONFIG_EXAMPLE_RESET_PROVISIONED?}
     CheckMacro -- มีการเปิดไว้ --> ResetProv[สั่งล้างค่า wifi_prov_mgr_reset_provisioning] --> CheckProv
     CheckMacro -- ไม่ได้เปิดไว้ --> CheckProv
     
-    CheckProv[เช็คสถานะ wifi_prov_mgr_is_provisioned] --> IsProv{เคยต่อ Wi-Fi แล้วหรือยัง<br/>(provisioned == true)?}
+    CheckProv[เช็คสถานะ wifi_prov_mgr_is_provisioned] --> IsProv{เคยต่อ Wi-Fi แล้วหรือยัง?}
     
-    IsProv -- ใช่ (True) --> StationMode[เข้า Station Mode<br/>ต่อ Wi-Fi ใช้งานปกติ]
-    IsProv -- ยัง (False) --> ProvMode[เข้า Provisioning Mode<br/>ปล่อยสัญญาณ / โชว์ QR Code]
+    IsProv -- ใช่ --> StationMode[เข้า Station Mode<br/>ต่อ Wi-Fi ใช้งานปกติ]
+    IsProv -- ยัง --> ProvMode[เข้า Provisioning Mode<br/>ปล่อยสัญญาณ / โชว์ QR Code]
     
     StationMode --> End([จบการทำงาน / เข้า Loop หลัก])
     ProvMode --> End
