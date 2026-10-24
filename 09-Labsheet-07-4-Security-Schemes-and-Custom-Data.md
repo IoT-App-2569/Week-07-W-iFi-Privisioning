@@ -142,15 +142,6 @@ wifi_prov_mgr_endpoint_register("custom-data", custom_prov_data_handler, NULL);
    - หาก PoP ไม่ตรง $\rightarrow$ Trigger Event `PROTOCOMM_SECURITY_SESSION_CREDENTIALS_MISMATCH` และปฏิเสธการเชื่อมต่อ
    - หาก PoP ถูกต้อง $\rightarrow$ Trigger Event `PROTOCOMM_SECURITY_SESSION_SETUP_OK` และสร้าง AES Session Key สำเร็จ
 
-```mermaid
-flowchart TD
-    A[เริ่มกระบวนการ Security Handshake] --> B[แอปมือถือส่ง Public Key + Verification Hash ให้ ESP32]
-    B --> C{ESP32 ตรวจสอบ PoP}
-    C -- PoP ไม่ถูกต้อง --x D[เกิด Event PROTOCOMM_SECURITY_SESSION_CREDENTIALS_MISMATCH]
-    D --> E[ส่ง Error และปฏิเสธการเชื่อมต่อ Session]
-    C -- PoP ถูกต้อง abcd1234 --> F[เกิด Event PROTOCOMM_SECURITY_SESSION_SETUP_OK]
-    F --> G[สร้าง AES Session Key สำเร็จ และเริ่มการสื่อสารแบบเข้ารหัส] ```
-
 ### ภารกิจที่ 2: ผังการรับส่งข้อมูลผ่าน Custom Endpoint (Custom Data Handler Flow)
 ให้นักศึกษาวาด Sequence / Data Flow ของฟังก์ชัน `custom_prov_data_handler()`:
 1. ข้อมูล `inbuf` ถูกส่งเข้ามาจากสมาร์ตโฟนผ่าน Protocomm
@@ -160,18 +151,26 @@ flowchart TD
 
 ```mermaid
 sequenceDiagram
-    autonumber
     participant App as Mobile App
-    participant Proto as Protocomm Layer
+    participant ESP as ESP32 Protocomm
     participant Handler as custom_prov_data_handler
-    
-    App->>Proto: ส่งข้อมูล custom-data (inbuf)
-    Proto->>Handler: เรียกใช้งาน custom_prov_data_handler(inbuf, inlen)
-    Handler->>Handler: พิมพ์ข้อความ Log ด้วย ESP_LOGI
-    Handler->>Handler: จอง Heap Memory ด้วย strdup("ACK_FROM_ESP32") ใส่ *outbuf
-    Handler-->>Proto: คืนค่า ESP_OK พร้อม *outbuf และ *outlen
-    Proto->>App: ส่งข้อความตอบกลับ ACK_FROM_ESP32
-    Proto->>Proto: คืนพื้นที่หน่วยความจำ free(*outbuf)```
+
+    Note over App,ESP: ขั้นตอนที่ 1: ตรวจสอบ Security (PoP)
+    App->>ESP: ส่ง Public Key + Verification Hash
+    alt PoP ไม่ถูกต้อง (wrong1234)
+        ESP-->>App: แจ้งเตือน CREDENTIALS_MISMATCH (ปฏิเสธ Session)
+    else PoP ถูกต้อง (abcd1234)
+        ESP-->>App: แจ้งเตือน SESSION_SETUP_OK (สร้าง AES Key สำเร็จ)
+        
+        Note over App,Handler: ขั้นตอนที่ 2: รับส่ง Custom Data
+        App->>ESP: ส่งข้อมูล custom-data (inbuf)
+        ESP->>Handler: เรียกใช้งาน custom_prov_data_handler
+        Handler->>Handler: พิมพ์ Log และจอง Heap Memory (strdup)
+        Handler-->>ESP: คืนค่า ESP_OK พร้อม *outbuf
+        ESP->>App: ส่งข้อความตอบกลับ ACK_FROM_ESP32
+        ESP->>ESP: คืนพื้นที่หน่วยความจำ free(*outbuf)
+    end
+```
 
 ---
 
