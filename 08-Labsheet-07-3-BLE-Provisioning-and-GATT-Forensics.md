@@ -123,24 +123,13 @@ I (26120) app: Connected with IP Address: 192.168.1.155
 
 ```mermaid
 flowchart TD
-    %% Nodes
-    A[เริ่มต้น: BLE Provisioning สำเร็จ] --> B[ESP32 สื่อสาร Wi-Fi Credentials เรียบร้อย]
-    B --> C[แอปพลิเคชันเรียกใช้ esp_wifi_connect]
-    C --> D[ปิดการทำงาน Bluetooth / BLE Stack]
-    D --> E[เรียกใช้ฟังก์ชัน esp_bt_mem_release]
-    E --> F[คืนพื้นที่ DRAM คืนสู่ระบบ Heap]
-    F --> G[เพิ่ม Free RAM สำหรับ Wi-Fi Application]
-
-    %% Styling
-    classDef start fill:#4CAF50,stroke:#333,stroke-width:2px,color:#fff;
-    classDef process fill:#2196F3,stroke:#333,stroke-width:1px,color:#fff;
-    classDef highlight fill:#FF9800,stroke:#333,stroke-width:2px,color:#fff;
-    classDef endNode fill:#9C27B0,stroke:#333,stroke-width:2px,color:#fff;
-
-    class A start;
-    class B,C,D process;
-    class E highlight;
-    class F,G endNode;```
+    A[เริ่มกระบวนการ BLE Provisioning สำเร็จ] --> B[ESP32 ได้รับ Wi-Fi SSID / Password]
+    B --> C[เชื่อมต่อเข้า Wi-Fi Network สำเร็จ]
+    C --> D[ปิดการทำงาน BLE / Controller Stack]
+    D --> E[เรียกฟังก์ชัน esp_bt_mem_release]
+    E --> F[คืนหน่วยความจำ DRAM กลับสู่ Heap System]
+    F --> G[ระบบมี Free RAM เพิ่มขึ้นสำหรับ Wi-Fi Application]
+```
 
 ---
 
