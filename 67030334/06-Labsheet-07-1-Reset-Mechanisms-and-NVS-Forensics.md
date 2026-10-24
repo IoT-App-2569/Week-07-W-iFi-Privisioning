@@ -175,7 +175,7 @@ void app_main(void)
 4. การเรียกฟังก์ชัน `wifi_prov_mgr_is_provisioned(&provisioned)`
 5. จุดแยกสายการทำงานเข้าสู่โหมด **Provisioning Mode** หรือ **Station Mode**
 
-<img width="1180" height="1546" alt="image" src="https://github.com/user-attachments/assets/522ef2ee-1746-4fc4-b1a5-9d86eb5e8afa" />
+<img width="256" height="896" alt="ภาพถ่ายหน้าจอ 2569-10-24 เวลา 23 51 20" src="https://github.com/user-attachments/assets/38d2a04b-bdf5-4aed-8329-43e2a3156e52" />
 
 
 ### ภารกิจที่ 2 ผังสถานะการเปลี่ยนจังหวะไฟ LED 1 (Wi-Fi STA Indicator)
