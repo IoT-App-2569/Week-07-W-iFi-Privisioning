@@ -121,9 +121,26 @@ I (26120) app: Connected with IP Address: 192.168.1.155
 2. เมื่อเชื่อมต่อ Wi-Fi สำเร็จ (`WIFI_PROV_CRED_SUCCESS`) $\rightarrow$ เกิด Event `WIFI_PROV_END`
 3. Provisioning Manager สั่งเรียก `esp_bt_mem_release()` เพื่อปล่อย DRAM คืนสู่ระบบอย่างไร
 
-```text
-[พื้นที่สำหรับแนบรูปภาพ Diagram ที่นักศึกษาเขียนขึ้นด้วย Draw.io / Mermaid / วาดมือ]
-```
+```mermaid
+flowchart TD
+    %% Nodes
+    A[เริ่มต้น: BLE Provisioning สำเร็จ] --> B[ESP32 สื่อสาร Wi-Fi Credentials เรียบร้อย]
+    B --> C[แอปพลิเคชันเรียกใช้ esp_wifi_connect]
+    C --> D[ปิดการทำงาน Bluetooth / BLE Stack]
+    D --> E[เรียกใช้ฟังก์ชัน esp_bt_mem_release]
+    E --> F[คืนพื้นที่ DRAM คืนสู่ระบบ Heap]
+    F --> G[เพิ่ม Free RAM สำหรับ Wi-Fi Application]
+
+    %% Styling
+    classDef start fill:#4CAF50,stroke:#333,stroke-width:2px,color:#fff;
+    classDef process fill:#2196F3,stroke:#333,stroke-width:1px,color:#fff;
+    classDef highlight fill:#FF9800,stroke:#333,stroke-width:2px,color:#fff;
+    classDef endNode fill:#9C27B0,stroke:#333,stroke-width:2px,color:#fff;
+
+    class A start;
+    class B,C,D process;
+    class E highlight;
+    class F,G endNode;```
 
 ---
 
@@ -131,16 +148,22 @@ I (26120) app: Connected with IP Address: 192.168.1.155
 
 | รายการตรวจสอบ | ผลการทดลอง / ข้อมูลที่สังเกตได้ |
 | :--- | :--- |
-| **1. BLE Device Name ที่สแกนเจอ** | `PROV_`.............................. |
-| **2. Primary Service UUID (128-bit)** | ..................................................... |
-| **3. Characteristic Endpoint ที่พบ (0x2901)** | 1. ..................................................<br/>2. ..................................................<br/>3. .................................................. |
-| **4. พฤติกรรมไฟ LED 2 (GPIO 4) ช่วงรอ vs ช่วงต่อ BLE** | ช่วงรอ: .......................................<br/>ช่วงต่อ: ....................................... |
-| **5. พฤติกรรมเมื่อต่อ Wi-Fi สำเร็จ** | มี Log คืนหน่วยความจำ Bluetooth หรือไม่? (มี / ไม่มี) |
+| **1. BLE Device Name ที่สแกนเจอ** | `PROV_DACDA8` |
+| **2. Primary Service UUID (128-bit)** | 021a9004-0382-4aea-bff4-6b3f1c5adfb4 |
+| **3. Characteristic Endpoint ที่พบ (0x2901)** | 1. proto-ver<br/>2. prov-session<br/>3. prov-config |
+| **4. พฤติกรรมไฟ LED 2 (GPIO 4) ช่วงรอ vs ช่วงต่อ BLE** | ช่วงรอ: ไฟดับเพื่อรอการเชื่อมต่อ<br/>ช่วงต่อ: ไฟกระพริบแสดงสถานะ BLE Connected |
+| **5. พฤติกรรมเมื่อต่อ Wi-Fi สำเร็จ** | มี Log คืนหน่วยความจำ Bluetooth หรือไม่? (มี) |
 
 ---
 
-## 7. คำถามท้ายการทดลอง (Post-Lab Questions)
-1. เหตุใด BLE Provisioning จึงไม่ส่งผลให้สัญญาณ Wi-Fi บนสมาร์ตโฟนของผู้ใช้หลุดระหว่างทำรายการ?
-2. Descriptor `0x2901` มีความสำคัญอย่างไรต่อการที่แอปพลิเคชันมือถือจะทราบว่า Characteristic แต่ละตัวใช้ทำหน้าที่อะไร?
-3. การที่ ESP-IDF มีฟังก์ชัน `esp_bt_mem_release()` มีประโยชน์อย่างไรต่อการทำงานของแอปพลิเคชัน IoT หลังเชื่อมต่อ Wi-Fi สำเร็จ?
+### 7. คำถามท้ายการทดลอง (Post-Lab Questions)
+
+1. **เหตุใด BLE Provisioning จึงไม่ส่งผลให้สัญญาณ Wi-Fi บนสมาร์ตโฟนของผู้ใช้หลุดระหว่างทำรายการ?**
+  - **ตอบ:** เพราะรับส่งข้อมูลผ่านสัญญาณ Bluetooth Low Energy แยกต่างหาก สมาร์ตโฟนจึงไม่ต้องตัดการเชื่อมต่อจาก Wi-Fi Access Point หลักที่ใช้งานอยู่เหมือนกับกรณีของ Wi-Fi SoftAP
+
+2. **Descriptor 0x2901 มีความสำคัญอย่างไรต่อการที่แอปพลิเคชันมือถือจะทราบว่า Characteristic แต่ละตัวใช้ทำหน้าที่อะไร?**
+  - **ตอบ:** ทำหน้าที่เก็บข้อความระบุชื่อ Endpoint (User Description) เช่น `proto-ver`, `prov-session`, `prov-config` ทำให้แอปบนมือถืออ่านและระบุหน้าที่ของแต่ละ Characteristic ได้ทันที ดยไม่ต้องกำหนดค่า UUID ตายตัวล่วงหน้าไว้ในแอป
+
+3. **การที่ ESP-IDF มีฟังก์ชัน `esp_bt_mem_release()` มีประโยชน์อย่างไรต่อการทำงานของแอปพลิเคชัน IoT หลังเชื่อมต่อ Wi-Fi สำเร็จ?**
+  - **ตอบ:** ช่วยคืนพื้นที่หน่วยความจำ RAM ที่เคยจองไว้ให้ Bluetooth สแตกกลับมาให้ระบบหลักทำให้ตัวบอร์ดมี RAM เหลือใช้งานสำหรับการประมวลผลและส่งข้อมูลผ่าน Wi-Fi ได้มีประสิทธิภาพมากขึ้น
 
