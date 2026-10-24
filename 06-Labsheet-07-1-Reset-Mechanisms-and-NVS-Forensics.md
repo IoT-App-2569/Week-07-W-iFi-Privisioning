@@ -176,7 +176,22 @@ void app_main(void)
 5. จุดแยกสายการทำงานเข้าสู่โหมด **Provisioning Mode** หรือ **Station Mode**
 
 ```text
-[พื้นที่สำหรับแนบรูปภาพ Flowchart ที่นักศึกษาเขียนขึ้นด้วย Draw.io / Mermaid / วาดมือ]
+flowchart TD
+    Start([⚡ เริ่มต้นทำงาน app_main]) --> Check_Button["ตรวจสอบปุ่ม GPIO 18<br/>กดค้างครบ 3 วินาทีหรือไม่?"]
+    
+    Check_Button -- "ใช่ (กดค้าง 3 วินาที)" --> HW_Erase["nvs_flash_erase()<br/>ล้างข้อมูล NVS Flash ทางกายภาพ"]
+    Check_Button -- "ไม่ใช่" --> Init_NVS["nvs_flash_init()<br/>เริ่มต้นใช้งาน NVS Partition"]
+    
+    HW_Erase --> Init_NVS
+    
+    Init_NVS --> Check_MenuConfig{"ตรวจสอบ Menuconfig<br/>CONFIG_EXAMPLE_RESET_PROVISIONED?"}
+    
+    Check_MenuConfig -- "เปิดใช้งาน (y)" --> Menu_Reset["wifi_prov_mgr_reset_provisioning()<br/>บังคับรีเซ็ตค่า Provisioning"]
+    Check_MenuConfig -- "ปิดใช้งาน (n)" --> Check_Prov["wifi_prov_mgr_is_provisioned()<br/>ตรวจสอบสถานะการ Provisioning"]
+    
+    Menu_Reset --> Prov_Mode[เข้าสู่โหมด Provisioning<br/>BLE / SoftAP]
+    Check_Prov -- "false (ยังไม่เคย Provision หรือถูกลบ)" --> Prov_Mode
+    Check_Prov -- "true (มีข้อมูลการเชื่อมต่อเดิมแล้ว)" --> STA_Mode[เข้าสู่โหมด Wi-Fi Station ทันที]
 ```
 
 ### ภารกิจที่ 2 ผังสถานะการเปลี่ยนจังหวะไฟ LED 1 (Wi-Fi STA Indicator)
@@ -188,17 +203,23 @@ void app_main(void)
 
 ## 6. ตารางบันทึกผลการทดลอง (Experiment Results)
 
-| รูปแบบการ Reset                  | คำสั่ง / พฤติกรรมที่ทำ               | พฤติกรรมของ LED แต่ละดวงหลังเปิดเครื่อง | สถานะใน Serial Monitor |
-| :------------------------------- | :----------------------------------- | :-------------------------------------- | :--------------------- |
-| **1. CLI Erase**                 | `idf.py erase-flash`                 |                                         |                        |
-| **2. Menuconfig Flag**           | `CONFIG_EXAMPLE_RESET_PROVISIONED=y` |                                         |                        |
-| **3. Hardware Button (GPIO 18)** | กดปุ่ม GPIO 18 ค้าง 3 วินาที         |                                         |                        |
+| รูปแบบการ Reset | คำสั่ง / พฤติกรรมที่ทำ | พฤติกรรมของ LED แต่ละดวงหลังเปิดเครื่อง | สถานะใน Serial Monitor |
+| :--- | :--- | :--- | :--- |
+| **1. CLI Erase** | `idf.py erase-flash` | ไฟสถานะ LED กระพริบเร็ว (Disconnected / Provisioning Mode) | ลบข้อมูล Flash ทั้งหมด, รายงานสถานะ `"Starting provisioning"` และสร้าง QR Code |
+| **2. Menuconfig Flag** | `CONFIG_EXAMPLE_RESET_PROVISIONED=y` | ไฟสถานะ LED กระพริบเร็ว (เข้าสู่โหมด Provisioning ทุกครั้งที่บูต) | แสดงข้อความล้าง Credentials อัตโนมัติทุกครั้งที่เปิดเครื่องใหม่ |
+| **3. Hardware Button (GPIO 18)** | กดปุ่ม GPIO 18 ค้าง 3 วินาทีขณะเปิดเครื่อง | **ก่อนกด:** ไฟกระพริบช้า (Connected)<br>**หลังกด:** ไฟเปลี่ยนเป็นกระพริบเร็ว (Provisioning Mode) | ตรวจพบการกดค้าง 3 วินาที, แสดง Log `>>> FACTORY RESET TRIGGERED! ERASING NVS FLASH <<<` แล้วเริ่มกระบวนการ Provisioning ใหม่ |
 
 ---
 
 ## 7. คำถามท้ายการทดลอง (Post-Lab Questions)
 1. เพราะเหตุใดการกดปุ่ม BOOT (GPIO 0) ค้างไว้ในจังหวะรีเซ็ตบอร์ด จึงทำให้โปรแกรมค้างอยู่ที่ ROM Bootloader และไม่ยอมทำงานต่อ?
-2. เพราะเหตุใดคำสั่ง `idf.py erase-flash` จึงทำให้ข้อมูลเฟิร์มแวร์ Application หายไปด้วย ในขณะที่ `nvs_flash_erase()` ไม่ทำให้เฟิร์มแวร์หาย?
-3. การออกแบบปุ่ม Factory Reset บนอุปกรณ์ IoT เชิงพาณิชย์ เหตุใดจึงต้องกำหนดให้ผู้ใช้กดปุ่มค้างไว้ 3-5 วินาที แทนที่จะสั่งลบข้อมูลทันทีที่แตะปุ่มเพียงเสี้ยววินาที?
-4. หากอุปกรณ์ IoT ถูกติดตั้งอยู่บนเสาสูงหรือฝังอยู่ในผนัง วิธีการ Reset ทางกายภาพรูปแบบใดเหมาะสมที่สุด?
+- ขา GPIO 0 บน ESP32 ทำหน้าที่เป็น Strapping Pin ในช่วงเวลาที่ชิปกำลังรีเซ็ตหรือบูตเครื่อง ถ้าระดับสัญญาณที่ขา GPIO 0 มีค่าเป็น LOW (0) ชิปจะตีความว่าผู้ใช้ต้องการเข้าสู่โหมดอัปโหลดเฟิร์มแวร์ (ROM Download Bootloader / Serial Bootloader) ทำให้ตัวประมวลผลหยุดรอรับคำสั่งแฟลชผ่านพอร์ต UART และไม่กระโดดไปรันโค้ดหลักใน app_main()
 
+2. เพราะเหตุใดคำสั่ง `idf.py erase-flash` จึงทำให้ข้อมูลเฟิร์มแวร์ Application หายไปด้วย ในขณะที่ `nvs_flash_erase()` ไม่ทำให้เฟิร์มแวร์หาย?
+- คำสั่ง idf.py erase-flash เป็นการลบข้อมูลบน Flash Memory ทั้งแผ่นแบบเบ็ดเสร็จ (Full Chip Erase) ซึ่งรวมถึง Bootloader, Partition Table, Application Firmware และ NVS Partition ทั้งหมด ส่วนฟังก์ชัน nvs_flash_erase() ในโค้ดเป็นคำสั่งระดับซอฟต์แวร์ที่ทำงานเฉพาะเจาะจงในการลบข้อมูลเฉพาะพาร์ทิชัน NVS (Non-Volatile Storage) ที่ถูกกำหนดไว้สำหรับเก็บค่าคอนฟิกเท่านั้น จึงไม่ส่งผลกระทบต่อพื้นที่เก็บเฟิร์มแวร์แต่อย่างใด
+
+3. การออกแบบปุ่ม Factory Reset บนอุปกรณ์ IoT เชิงพาณิชย์ เหตุใดจึงต้องกำหนดให้ผู้ใช้กดปุ่มค้างไว้ 3-5 วินาที แทนที่จะสั่งลบข้อมูลทันทีที่แตะปุ่มเพียงเสี้ยววินาที?
+- เพื่อป้องกันการรีเซ็ตหรือลบข้อมูลค่าคอนฟิกโดยอุบัติเหตุ (Accidental Reset) เช่น ผู้ใช้อาจเผลอกดโดนปุ่มขณะหยิบจับอุปกรณ์ ทำความสะอาด หรือขนย้าย การกำหนดเงื่อนไขให้กดปุ่มแช่ไว้ระยะเวลาหนึ่งช่วยยืนยันความตั้งใจจริงของผู้ใช้งาน (Intentional User Action) ก่อนที่ระบบจะทำการล้างข้อมูลสำคัญทิ้ง
+
+4. หากอุปกรณ์ IoT ถูกติดตั้งอยู่บนเสาสูงหรือฝังอยู่ในผนัง วิธีการ Reset ทางกายภาพรูปแบบใดเหมาะสมที่สุด?
+- รูปแบบที่เหมาะสมที่สุดคือ Remote Reset / Software Reset ผ่านระบบ Cloud หรือ Web Dashboard (เช่น การส่งคำสั่งผ่าน MQTT Protocol, HTTP API หรือแอปพลิเคชันบนมือถือ) เนื่องจากผู้ใช้งานไม่สามารถเข้าถึงตัวอุปกรณ์เพื่อกดปุ่มฮาร์ดแวร์ทางกายภาพได้โดยตรง

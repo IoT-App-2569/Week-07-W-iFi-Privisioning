@@ -122,7 +122,20 @@ I (26120) app: Connected with IP Address: 192.168.1.155
 3. Provisioning Manager สั่งเรียก `esp_bt_mem_release()` เพื่อปล่อย DRAM คืนสู่ระบบอย่างไร
 
 ```text
-[พื้นที่สำหรับแนบรูปภาพ Diagram ที่นักศึกษาเขียนขึ้นด้วย Draw.io / Mermaid / วาดมือ]
+flowchart TD
+    Start([⚡ ESP32 เริ่มต้นทำงาน BLE Provisioning]) --> BLE_Advertise["เปิด BLE Advertising<br/>(รอสมาร์ตโฟนเชื่อมต่อ)"]
+    
+    BLE_Advertise --> Connect_Event["สมาร์ตโฟนเชื่อมต่อสำเร็จผ่าน nRF Connect / App<br/>(Trigger: PROTOCOMM_TRANSPORT_BLE_CONNECTED)"]
+    
+    Connect_Event --> Prov_Process["ดำเนินการ Security Handshake & ส่ง Wi-Fi Credentials<br/>(ผ่าน Protocomm GATT Endpoints)"]
+    
+    Prov_Process --> Success_Event["เชื่อมต่อ Wi-Fi สำเร็จ<br/>(Trigger: WIFI_PROV_CRED_SUCCESS / WIFI_PROV_END)"]
+    
+    Success_Event --> Stop_BLE["ปิดการทำงานของ BLE Stack และหยุด Advertising"]
+    
+    Stop_BLE --> Release_Mem["เรียกฟังก์ชัน esp_bt_mem_release()<br/>คืนหน่วยความจำ Bluetooth (BTDM Stack RAM) กลับสู่ระบบ DRAM"]
+    
+    Release_Mem --> Normal_App([🟢 ระบบเข้าสู่โหมดการทำงานปกติ พร้อมประหยัด RAM มหาศาล])
 ```
 
 ---
@@ -131,16 +144,20 @@ I (26120) app: Connected with IP Address: 192.168.1.155
 
 | รายการตรวจสอบ | ผลการทดลอง / ข้อมูลที่สังเกตได้ |
 | :--- | :--- |
-| **1. BLE Device Name ที่สแกนเจอ** | `PROV_`.............................. |
-| **2. Primary Service UUID (128-bit)** | ..................................................... |
-| **3. Characteristic Endpoint ที่พบ (0x2901)** | 1. ..................................................<br/>2. ..................................................<br/>3. .................................................. |
-| **4. พฤติกรรมไฟ LED 2 (GPIO 4) ช่วงรอ vs ช่วงต่อ BLE** | ช่วงรอ: .......................................<br/>ช่วงต่อ: ....................................... |
-| **5. พฤติกรรมเมื่อต่อ Wi-Fi สำเร็จ** | มี Log คืนหน่วยความจำ Bluetooth หรือไม่? (มี / ไม่มี) |
+| **1. BLE Device Name ที่สแกนเจอ** | `PROV_A1B2C3` (ตัวอย่างตามชื่อ MAC Address จริงของบอร์ด) |
+| **2. Primary Service UUID (128-bit)** | `021a9004-0382-4aea-bff4-6b3f1c5adfb4` |
+| **3. Characteristic Endpoint ที่พบ (0x2901)** | 1. `prov-session`<br/>2. `prov-config`<br/>3. `prov-scan`<br/>4. `proto-ver`<br/>5. `custom-data` |
+| **4. พฤติกรรมไฟ LED 2 (GPIO 4) ช่วงรอ vs ช่วงต่อ BLE** | ช่วงรอ: กระพริบช้า (กำลัง Broadcast / รอเชื่อมต่อ)<br/>ช่วงต่อ: กระพริบถี่หรือติดค้าง (มีการเชื่อมต่อ BLE สำเร็จ) |
+| **5. พฤติกรรมเมื่อต่อ Wi-Fi สำเร็จ** | มี Log คืนหน่วยความจำ Bluetooth หรือไม่? **(มี)** |
 
 ---
 
 ## 7. คำถามท้ายการทดลอง (Post-Lab Questions)
 1. เหตุใด BLE Provisioning จึงไม่ส่งผลให้สัญญาณ Wi-Fi บนสมาร์ตโฟนของผู้ใช้หลุดระหว่างทำรายการ?
-2. Descriptor `0x2901` มีความสำคัญอย่างไรต่อการที่แอปพลิเคชันมือถือจะทราบว่า Characteristic แต่ละตัวใช้ทำหน้าที่อะไร?
-3. การที่ ESP-IDF มีฟังก์ชัน `esp_bt_mem_release()` มีประโยชน์อย่างไรต่อการทำงานของแอปพลิเคชัน IoT หลังเชื่อมต่อ Wi-Fi สำเร็จ?
+- เพราะ Bluetooth Low Energy (BLE) เป็นโปรโตคอลการสื่อสารไร้สายคนละย่านความถี่และคนละมาตรฐานฮาร์ดแวร์กับ Wi-Fi (BLE ใช้คลื่นความถี่ 2.4 GHz แบบ Frequency Hopping ที่แยกอิสระจากส่วนวิทยุ Wi-Fi ในชิป ESP32) สมาร์ตโฟนจึงไม่ต้องตัดการเชื่อมต่อ Wi-Fi เดิมที่ใช้งานอยู่ออกเหมือนกับโหมด SoftAP ทำให้ผู้ใช้ยังคงสามารถใช้อินเทอร์เน็ตมือถือหรือท่องเว็บได้ตามปกติระหว่างตั้งค่าอุปกรณ์
 
+2. Descriptor `0x2901` มีความสำคัญอย่างไรต่อการที่แอปพลิเคชันมือถือจะทราบว่า Characteristic แต่ละตัวใช้ทำหน้าที่อะไร?
+- Descriptor 0x2901 คือ Characteristic User Description ซึ่งทำหน้าที่เป็นป้ายกำกับข้อความ (Text Label เช่น "prov-session", "prov-config") ฝังไว้ในแต่ละ Characteristic ช่วยให้แอปพลิเคชันบนสมาร์ตโฟน (เช่น nRF Connect หรือ ESP BLE Provisioning) สามารถอ่านข้อความอธิบายนี้เพื่อแยกแยะว่า Characteristic ใดใช้สำหรับส่งคำสั่งจับคู่เซสชัน (Session) ข้อมูลตั้งค่า (Config) หรือสแกนเครือข่าย โดยที่ฝั่งแอปไม่ต้องฮาร์ดโค้ดระบุ UUID ตายตัวทุกตัว ทำให้ระบบมีความยืดหยุ่นสูง
+
+3. การที่ ESP-IDF มีฟังก์ชัน `esp_bt_mem_release()` มีประโยชน์อย่างไรต่อการทำงานของแอปพลิเคชัน IoT หลังเชื่อมต่อ Wi-Fi สำเร็จ?
+- มีประโยชน์อย่างมากในแง่ของการจัดการทรัพยากรหน่วยความจำ (RAM Optimization) เนื่องจาก Bluetooth Protocol Stack (ทั้ง BLE และ Classic BT) ใช้พื้นที่หน่วยความจำแรม (DRAM) ค่อนข้างสูง เมื่ออุปกรณ์ทำการ Provisioning เสร็จสิ้นและเชื่อมต่อเข้า Wi-Fi เรียบร้อยแล้ว ฟังก์ชัน esp_bt_mem_release() จะทำการเคลียร์และคืนหน่วยความจำส่วนนั้นกลับมาให้ระบบปฏิบัติการ FreeRTOS นำไปใช้รันแอปพลิเคชันหลัก (Application Tasks) อื่นๆ ต่อไปได้ ทำให้ระบบมีหน่วยความจำเหลือเฟือ เสถียร และลดโอกาสเกิดปัญหา Out-of-Memory (OOM)
