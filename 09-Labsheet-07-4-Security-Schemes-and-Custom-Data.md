@@ -141,6 +141,8 @@ wifi_prov_mgr_endpoint_register("custom-data", custom_prov_data_handler, NULL);
 3. จุดแยกทางเลือก (Branching):
    - หาก PoP ไม่ตรง $\rightarrow$ Trigger Event `PROTOCOMM_SECURITY_SESSION_CREDENTIALS_MISMATCH` และปฏิเสธการเชื่อมต่อ
    - หาก PoP ถูกต้อง $\rightarrow$ Trigger Event `PROTOCOMM_SECURITY_SESSION_SETUP_OK` และสร้าง AES Session Key สำเร็จ
+   
+<img width="750" height="960" alt="image" src="https://github.com/user-attachments/assets/495fca6e-1967-42b9-af5a-2e33f8fd44f1" />
 
 ### ภารกิจที่ 2: ผังการรับส่งข้อมูลผ่าน Custom Endpoint (Custom Data Handler Flow)
 ให้นักศึกษาวาด Sequence / Data Flow ของฟังก์ชัน `custom_prov_data_handler()`:
@@ -149,9 +151,9 @@ wifi_prov_mgr_endpoint_register("custom-data", custom_prov_data_handler, NULL);
 3. การจัดสรรหน่วยความจำแบบไดนามิกด้วย `strdup()` ให้กับ `*outbuf`
 4. ทำไมตัวแปร `*outbuf` จึงต้องจัดสรรใน Heap Memory (ทำไมจึงใช้ตัวแปร Local Static Array ธรรมดาไม่ได้)?
 
-```text
-[พื้นที่สำหรับแนบรูปภาพ Diagram ที่นักศึกษาเขียนขึ้นด้วย Draw.io / Mermaid / วาดมือ]
-```
+
+<img width="960" height="300" alt="image" src="https://github.com/user-attachments/assets/e305e691-6b81-4fd0-ad00-8f6065a881e0" />
+
 
 ---
 
@@ -159,15 +161,35 @@ wifi_prov_mgr_endpoint_register("custom-data", custom_prov_data_handler, NULL);
 
 | สถานการณ์ทดสอบ | ค่า PoP ที่ป้อน | ผลลัพธ์บนแอปมือถือ | ข้อความ Log ใน Serial Monitor |
 | :--- | :--- | :--- | :--- |
-| **1. ป้อน PoP ผิดพลาด** | `wrong1234` | | |
-| **2. ป้อน PoP ถูกต้อง** | `abcd1234` | | |
-| **3. ส่ง Custom Data** | `TEST_DATA_999` | | |
+| **1. ป้อน PoP ผิดพลาด** | `wrong1234` |ขึ้นแจ้งเตือนข้อผิดพลาด (Authentication Failed / Incorrect PoP) ไม่สามารถผ่านเข้าหน้าตั้งค่า Wi-Fi ได้ |E (...) app: Received incorrect username and/or PoP for establishing secure session! |
+| **2. ป้อน PoP ถูกต้อง** | `abcd1234` |เชื่อมต่อสำเร็จ ผ่านเข้าสู่หน้าเลือกเครือข่าย Wi-Fi ได้ปกติ | I (...) app: Secured session established! |
+| **3. ส่ง Custom Data** | `TEST_DATA_999` |ขึ้นสถานะตอบกลับสำเร็จ (ACK / Success) จากอุปกรณ์ | I (...) app: Received custom data: TEST_DATA_999 |
 
 ---
 
 ## 8. คำถามท้ายการทดลอง (Post-Lab Questions)
 1. การใช้ **Proof-of-Possession (PoP)** ช่วยป้องกันการโจมตีประเภทใดได้บ้าง?
-2. หากไม่มีการใช้ PoP (เช่น ใน Security 0) ผู้โจมตีที่อยู่ในรัศมีสัญญาณบลูทูธสามารถทำสิ่งใดกับอุปกรณ์ได้บ้าง?
-3. ในการประยุกต์ใช้งานเชิงพาณิชย์จริง เราสามารถนำ **Custom Data Endpoint** ไปใช้ส่งข้อมูลประเภทใดได้อีกบ้าง (ยกตัวอย่าง 2 กรณี)?
-4. ในฟังก์ชัน `custom_prov_data_handler()` เหตุใดหน่วยความจำที่จัดสรรให้ `*outbuf` จึงถูก Free โดย Protocomm Layer อัตโนมัติหลังจากส่งข้อมูลเสร็จ?
+```
+ป้องกันคนที่ไม่ได้ครอบครองอุปกรณ์จริงไม่ให้แอบเชื่อมต่อมาตั้งค่า เพราะไม่มี PoP จาก QR Code ก็เปิด Session ไม่ได้
+ป้องกันการดักฟังข้อมูล เพราะ PoP ถูกใช้สร้างคีย์เข้ารหัสของ Session ทำให้ SSID และรหัสผ่านที่ส่งไม่อ่านออก
+และช่วยกันการปลอมตัวเป็นแอปหรืออุปกรณ์ (Man-in-the-Middle) เพราะอีกฝ่ายไม่รู้ค่า PoP จึงสร้างคีย์ที่ตรงกันไม่ได้
+```
 
+2. หากไม่มีการใช้ PoP (เช่น ใน Security 0) ผู้โจมตีที่อยู่ในรัศมีสัญญาณบลูทูธสามารถทำสิ่งใดกับอุปกรณ์ได้บ้าง?
+```
+เชื่อมต่อเข้ามาเองได้ทันทีโดยไม่ต้องยืนยันตัวตน และดักอ่าน SSID กับรหัสผ่าน Wi-Fi ที่ส่งเป็นข้อความธรรมดา
+ส่งข้อมูล Wi-Fi ปลอมให้อุปกรณ์ไปต่อกับ AP ของผู้โจมตี หรือแย่ง Provisioning ตัดหน้าเจ้าของตัวจริง
+```
+
+3. ในการประยุกต์ใช้งานเชิงพาณิชย์จริง เราสามารถนำ **Custom Data Endpoint** ไปใช้ส่งข้อมูลประเภทใดได้อีกบ้าง (ยกตัวอย่าง 2 กรณี)?
+```
+กรณีที่ 1 ส่งข้อมูลเชื่อมต่อ Cloud เช่น URL ของ MQTT Broker, API Key หรือ Token ให้อุปกรณ์เอาไปเชื่อมต่อระบบหลังบ้าน
+กรณีที่ 2 ส่งข้อมูลผูกบัญชีและค่าตั้งต้น เช่น User ID สำหรับผูกอุปกรณ์กับเจ้าของ ชื่อห้องหรือตำแหน่งติดตั้ง และ Timezone
+```
+
+4. ในฟังก์ชัน `custom_prov_data_handler()` เหตุใดหน่วยความจำที่จัดสรรให้ `*outbuf` จึงถูก Free โดย Protocomm Layer อัตโนมัติหลังจากส่งข้อมูลเสร็จ?
+```
+เพราะ handler จัดสรรหน่วยความจำแล้วคืนค่ากลับทันที ไม่รู้ว่า Protocomm ส่งข้อมูลเสร็จเมื่อไร
+ถ้า handler Free เองก่อนส่งจะเกิดการอ้างถึงหน่วยความจำที่ถูกคืนไปแล้ว มีแต่ Protocomm ที่ถือ pointer ตัวนี้และรู้ว่าส่งเสร็จเมื่อไร
+จึงเป็นฝ่าย Free ให้ ช่วยกันทั้ง Memory Leak และ Dangling Pointer
+```

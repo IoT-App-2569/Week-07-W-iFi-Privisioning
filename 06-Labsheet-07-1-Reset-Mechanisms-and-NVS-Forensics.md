@@ -178,11 +178,13 @@ void app_main(void)
 ```text
 [พื้นที่สำหรับแนบรูปภาพ Flowchart ที่นักศึกษาเขียนขึ้นด้วย Draw.io / Mermaid / วาดมือ]
 ```
+<img width="667" height="725" alt="image" src="https://github.com/user-attachments/assets/4f1dd03a-a5d5-487f-9b3e-8502a1e6f1ff" />
 
 ### ภารกิจที่ 2 ผังสถานะการเปลี่ยนจังหวะไฟ LED 1 (Wi-Fi STA Indicator)
 ให้นักศึกษาวาด State Diagram แสดงการเปลี่ยนสถานะของ **LED 1 (GPIO 2)**:
 - เงื่อนไขใดทำให้ LED 1 เข้าสู่สถานะ `LED_STA_MODE_DISCONNECTED` (กระพริบ 200ms Mark / 200ms Space)
 - เงื่อนไขหรือ Event ใดทำให้เปลี่ยนเป็น `LED_STA_MODE_CONNECTED` (Heartbeat 200ms ทุก 1s)
+<img width="695" height="511" alt="image" src="https://github.com/user-attachments/assets/95be58ab-7e58-451e-991d-e6f4cc9d653d" />
 
 ---
 
@@ -190,15 +192,26 @@ void app_main(void)
 
 | รูปแบบการ Reset                  | คำสั่ง / พฤติกรรมที่ทำ               | พฤติกรรมของ LED แต่ละดวงหลังเปิดเครื่อง | สถานะใน Serial Monitor |
 | :------------------------------- | :----------------------------------- | :-------------------------------------- | :--------------------- |
-| **1. CLI Erase**                 | `idf.py erase-flash`                 |                                         |                        |
-| **2. Menuconfig Flag**           | `CONFIG_EXAMPLE_RESET_PROVISIONED=y` |                                         |                        |
-| **3. Hardware Button (GPIO 18)** | กดปุ่ม GPIO 18 ค้าง 3 วินาที         |                                         |                        |
+| **1. CLI Erase**                 | `idf.py erase-flash`                 |	ไม่มีไฟกระพริบเลย เพราะเฟิร์มแวร์ถูกลบไปด้วย ต้อง idf.py flash ใหม่ก่อนถึงจะเห็นพฤติกรรมใดๆ — หลัง flash ใหม่ LED2 (Provisioning indicator) จะกระพริบเข้าสู่โหมด Provisioning เพราะไม่มี Wi-Fi credential เหลืออยู่เลย                                         |  ก่อน flash ใหม่ ไม่มี output หรือ error เช่น invalid header  หลัง flash ใหม่: ขึ้น log Starting WiFi provisioning พร้อม SSID/QR code                      |
+| **2. Menuconfig Flag**           | `CONFIG_EXAMPLE_RESET_PROVISIONED=y` |  App ยังรันปกติ แต่ในโค้ดจะสั่งลบ credential ใน NVS ตอน boot แล้วเข้าสู่โหมด Provisioning ทันทีที่ LED2 กระพริบแบบ Provisioning แทนที่จะเข้า LED_STA_MODE_CONNECTED/DISCONNECTED                                       | log แสดง Resetting provisioned credentials... ตามด้วย Starting provisioning                       |
+| **3. Hardware Button (GPIO 18)** | กดปุ่ม GPIO 18 ค้าง 3 วินาที         | ระหว่างกด LED ยังทำงานตามสถานะเดิม เช่น Heartbeat ถ้าเชื่อมต่ออยู่ เมื่อครบ 3 วิ ระบบลบ NVS provisioning แล้ว reboot LED กลับไปกระพริบโหมด Provisioning                                        |  นับเวลากดปุ่มใน log เช่น Holding... 1s 2s 3s ตามด้วย Factory reset triggered, restarting                      |
 
 ---
 
 ## 7. คำถามท้ายการทดลอง (Post-Lab Questions)
 1. เพราะเหตุใดการกดปุ่ม BOOT (GPIO 0) ค้างไว้ในจังหวะรีเซ็ตบอร์ด จึงทำให้โปรแกรมค้างอยู่ที่ ROM Bootloader และไม่ยอมทำงานต่อ?
+```
+GPIO0 คือขาที่ ROM bootloader ใช้ตรวจสอบโหมดบูตตอนเริ่มทำงาน ถ้าขานี้ถูกดึง LOW ขณะ reset จากการกดปุ่ม BOOT ค้าง ชิปจะเข้า UART Download Mode แทนการบูตจาก flash ตามปกติ โหมดนี้รอรับคำสั่งจากเครื่องมือ flash ผ่าน UART เท่านั้น ไม่กระโดดไปรัน application เลยจึงดูเหมือนค้าง
+```
 2. เพราะเหตุใดคำสั่ง `idf.py erase-flash` จึงทำให้ข้อมูลเฟิร์มแวร์ Application หายไปด้วย ในขณะที่ `nvs_flash_erase()` ไม่ทำให้เฟิร์มแวร์หาย?
+```
+idf.py erase-flash ลบ flash chip ทั้งหมดทุก partition (bootloader, partition table, app, NVS) ผ่าน esptool ระดับฮาร์ดแวร์ ส่วน nvs_flash_erase() เป็น API ที่เรียกจากโปรแกรมที่กำลังรันอยู่ ลบเฉพาะข้อมูลใน NVS partition เท่านั้น ไม่แตะ partition ของ application จึงยังรันต่อได้ปกติ
+```
 3. การออกแบบปุ่ม Factory Reset บนอุปกรณ์ IoT เชิงพาณิชย์ เหตุใดจึงต้องกำหนดให้ผู้ใช้กดปุ่มค้างไว้ 3-5 วินาที แทนที่จะสั่งลบข้อมูลทันทีที่แตะปุ่มเพียงเสี้ยววินาที?
+```
+เพื่อป้องกันการรีเซ็ตโดยไม่ตั้งใจอย่างการ โดนกระแทก หรือ แตะพลาด ยืนยันเจตนาผู้ใช้จริง ให้โอกาสยกเลิกก่อนครบเวลา และลดความเสี่ยงจากการถูกกดโดยเจตนาร้าย ถือเป็น UX pattern มาตรฐานสำหรับ action ที่ทำลายข้อมูลและย้อนกลับไม่ได้
+```
 4. หากอุปกรณ์ IoT ถูกติดตั้งอยู่บนเสาสูงหรือฝังอยู่ในผนัง วิธีการ Reset ทางกายภาพรูปแบบใดเหมาะสมที่สุด?
-
+```
+ใช้ Power-cycle pattern ปิด-เปิดไฟเลี้ยงติดกัน 3-5 ครั้งในเวลาสั้นๆ โดยเฟิร์มแวร์นับ boot count ผ่าน NVS/RTC memory เพราะไม่ต้องเข้าถึงปุ่มกดทางกายภาพเลย เหมาะกับจุดติดตั้งที่เข้าถึงยาก อาจเสริมด้วยการสั่ง reset ระยะไกลผ่านซอฟต์แวร์/คลาวด์ได้ด้วย
+```
