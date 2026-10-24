@@ -147,7 +147,7 @@ sequenceDiagram
     
     ESP32->>App: แจ้งแอปว่าต่อเน็ตสำเร็จแล้ว
     Note over ESP32: ปิด Wi-Fi PROV_DACDA8 > ไฟ LED 1 (GPIO 2) ติดสว่าง
-
+```
 ---
 
 ## 6. ตารางบันทึกผลการทดลอง (Experiment Results)
