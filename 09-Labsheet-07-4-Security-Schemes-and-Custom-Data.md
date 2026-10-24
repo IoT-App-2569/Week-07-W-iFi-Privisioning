@@ -150,7 +150,16 @@ wifi_prov_mgr_endpoint_register("custom-data", custom_prov_data_handler, NULL);
 4. ทำไมตัวแปร `*outbuf` จึงต้องจัดสรรใน Heap Memory (ทำไมจึงใช้ตัวแปร Local Static Array ธรรมดาไม่ได้)?
 
 ```text
-[พื้นที่สำหรับแนบรูปภาพ Diagram ที่นักศึกษาเขียนขึ้นด้วย Draw.io / Mermaid / วาดมือ]
+flowchart TD
+    Start([📱 สมาร์ตโฟนส่ง Key Exchange + PoP ไปยัง ESP32]) --> Verify_PoP["Protocomm Security Layer ตรวจสอบความถูกต้องของ PoP"]
+    
+    Verify_PoP --> Decision{"PoP ถูกต้องหรือไม่?"}
+    
+    Decision -- "ไม่ถูกต้อง (เช่น wrong1234)" --> Fail_State["ปฏิเสธการสร้าง Secure Session<br/>Trigger Event: PROTOCOMM_SECURITY_SESSION_CREDENTIALS_MISMATCH"]
+    Fail_State --> App_Error["📱 แอปแสดงข้อความแจ้งเตือน PoP ผิดพลาด<br/>ESP32 บันทึก Log: Received incorrect username and/or PoP"]
+    
+    Decision -- "ถูกต้อง (เช่น abcd1234)" --> Success_State["สร้าง AES Session Key สำเร็จ<br/>Trigger Event: PROTOCOMM_SECURITY_SESSION_SETUP_OK"]
+    Success_State --> App_Ready["📱 แอปเข้าสู่สถานะ Secured Session พร้อมรับส่งข้อมูล Wi-Fi และ Custom Data"]
 ```
 
 ---
@@ -159,15 +168,25 @@ wifi_prov_mgr_endpoint_register("custom-data", custom_prov_data_handler, NULL);
 
 | สถานการณ์ทดสอบ | ค่า PoP ที่ป้อน | ผลลัพธ์บนแอปมือถือ | ข้อความ Log ใน Serial Monitor |
 | :--- | :--- | :--- | :--- |
-| **1. ป้อน PoP ผิดพลาด** | `wrong1234` | | |
-| **2. ป้อน PoP ถูกต้อง** | `abcd1234` | | |
-| **3. ส่ง Custom Data** | `TEST_DATA_999` | | |
+| **1. ป้อน PoP ผิดพลาด** | `wrong1234` | แอปแจ้งเตือนข้อผิดพลาดในการยืนยันตัวตน (Authentication Failed) | `E (15600) app: Received incorrect username and/or PoP for establishing secure session!` |
+| **2. ป้อน PoP ถูกต้อง** | `abcd1234` | แอปเชื่อมต่อสำเร็จ เข้าสู่หน้าตั้งค่า Wi-Fi | `I (18200) app: Secured session established!` |
+| **3. ส่ง Custom Data** | `TEST_DATA_999` | แอปได้รับข้อความตอบกลับ `ACK_FROM_ESP32` | `I (22150) app: Received custom data: TEST_DATA_999` |
 
 ---
 
 ## 8. คำถามท้ายการทดลอง (Post-Lab Questions)
 1. การใช้ **Proof-of-Possession (PoP)** ช่วยป้องกันการโจมตีประเภทใดได้บ้าง?
+- ช่วยป้องกันการโจมตีแบบสวมรอย (Rogue Provisioning / Man-in-the-Middle Attack) และการแอบเข้าถึงอุปกรณ์โดยไม่ได้รับอนุญาต (Unauthorized Access) เนื่องจากผู้ที่จะตั้งค่าอุปกรณ์ได้จะต้องทราบรหัสผ่านเฉพาะ (PoP) ที่กำกับอยู่บนตัวเครื่องหรือสติกเกอร์เท่านั้น ต่อให้ผู้โจมตีจะสแกนเจอสัญญาณ BLE หรือ SoftAP ของอุปกรณ์ ก็ไม่สามารถจับคู่เซสชันความปลอดภัยเพื่อส่งข้อมูลการเชื่อมต่อ Wi-Fi ได้
+
 2. หากไม่มีการใช้ PoP (เช่น ใน Security 0) ผู้โจมตีที่อยู่ในรัศมีสัญญาณบลูทูธสามารถทำสิ่งใดกับอุปกรณ์ได้บ้าง?
+- ผู้โจมตีสามารถเชื่อมต่อเข้ากับอุปกรณ์ผ่าน Protocomm Endpoints ได้อย่างอิสระโดยไม่ต้องยืนยันตัวตน (Unauthenticated) ทำให้สามารถอ่านข้อมูลคอนฟิก ดักฟังข้อมูล หรือลอบส่งคำสั่งผ่าน Custom Endpoints รวมถึงอาจหลอกส่งชุดข้อมูล Wi-Fi ปลอมให้อุปกรณ์เชื่อมต่อเข้าไปยังเครือข่ายของผู้โจมตีได้
+
 3. ในการประยุกต์ใช้งานเชิงพาณิชย์จริง เราสามารถนำ **Custom Data Endpoint** ไปใช้ส่งข้อมูลประเภทใดได้อีกบ้าง (ยกตัวอย่าง 2 กรณี)?
+- Device Activation / License Key: ส่งรหัสเปิดใช้งานสิทธิ์การใช้งานระบบคลาวด์หรือผูกบัญชีผู้ใช้ (User Account Binding)
+
+Device-Specific Configuration: ส่งค่าพารามิเตอร์เฉพาะตัวของอุปกรณ์ เช่น หมายเลขประจำตัวเครื่อง (Asset ID), ตำแหน่งจุดติดตั้ง (Location/Room Code), หรือที่อยู่เซิร์ฟเวอร์ MQTT Broker ส่วนตัวของลูกค้า
+
 4. ในฟังก์ชัน `custom_prov_data_handler()` เหตุใดหน่วยความจำที่จัดสรรให้ `*outbuf` จึงถูก Free โดย Protocomm Layer อัตโนมัติหลังจากส่งข้อมูลเสร็จ?
+- เป็นการออกแบบสถาปัตยกรรมของเฟรมเวิร์ก Protocomm เพื่อความสะดวกและปลอดภัยในการจัดการหน่วยความจำ (Memory Management) โดยเมื่อ Custom Handler ส่งคืนพอยเตอร์ข้อมูลผ่าน *outbuf ตัวชั้น Protocomm จะเป็นผู้รับผิดชอบในการนำข้อมูลไปส่งออกผ่านเลเยอร์การสื่อสาร และทำการเรียกฟังก์ชันคืนหน่วยความจำ (free()) พื้นที่ Heap ส่วนนั้นให้โดยอัตโนมัติทันที เพื่อป้องกันปัญหาหน่วยความจำรั่วไหล (Memory Leak) ที่อาจเกิดขึ้นหากผู้พัฒนาลืมจัดการคืนหน่วยความจำด้วยตนเอง
+
 
