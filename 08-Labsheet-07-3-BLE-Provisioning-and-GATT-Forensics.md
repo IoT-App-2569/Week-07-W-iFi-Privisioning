@@ -65,7 +65,7 @@ graph TD
    ... [QR Code ASCII & URL] ...
    ```
 
----
+
 
 ### ขั้นตอนที่ 3: ส่องโครงสร้าง GATT ผ่านแอป nRF Connect (BLE Forensic)
 1. เปิดแอป **nRF Connect for Mobile** บนสมาร์ตโฟน
@@ -79,7 +79,8 @@ graph TD
 6. บันทึกภาพหน้าจอและข้อมูล UUIDs ลงในตารางผลการทดลอง
 7. กดปุ่ม **DISCONNECT** บนแอป nRF Connect เพื่อปล่อยบอร์ดให้พร้อมรับการ Provision
 
----
+![alt text](image-1.png)
+
 
 ### ขั้นตอนที่ 4: ทำการ Provisioning ด้วยแอป ESP BLE Provisioning
 1. เปิดแอป **ESP BLE Provisioning**
@@ -115,15 +116,18 @@ I (26120) app: Connected with IP Address: 192.168.1.155
   - **Characteristic UUIDs** แต่ละตัว
   - **Descriptor 0x2901 (User Description)** ที่ผูกเข้ากับ Protocomm Endpoints (`prov-session`, `prov-config`, `prov-scan`, `proto-ver`, `custom-data`)
 
+  ![alt text](image-2.png)
+
 ### ภารกิจที่ 2: ผังลำดับการคืนหน่วยความจำ Bluetooth (BLE Lifecycle & Memory Reclaim Flow)
 ให้นักศึกษาวาด Flowchart / Sequence แสดงว่า:
 1. การเชื่อมต่อ BLE ถูกตรวจพบผ่าน Event `PROTOCOMM_TRANSPORT_BLE_CONNECTED` (LED 2 กระพริบเร็ว 100ms)
 2. เมื่อเชื่อมต่อ Wi-Fi สำเร็จ (`WIFI_PROV_CRED_SUCCESS`) $\rightarrow$ เกิด Event `WIFI_PROV_END`
 3. Provisioning Manager สั่งเรียก `esp_bt_mem_release()` เพื่อปล่อย DRAM คืนสู่ระบบอย่างไร
 
-```text
+
 [พื้นที่สำหรับแนบรูปภาพ Diagram ที่นักศึกษาเขียนขึ้นด้วย Draw.io / Mermaid / วาดมือ]
-```
+
+![alt text](image-3.png)
 
 ---
 
@@ -131,16 +135,20 @@ I (26120) app: Connected with IP Address: 192.168.1.155
 
 | รายการตรวจสอบ | ผลการทดลอง / ข้อมูลที่สังเกตได้ |
 | :--- | :--- |
-| **1. BLE Device Name ที่สแกนเจอ** | `PROV_`.............................. |
-| **2. Primary Service UUID (128-bit)** | ..................................................... |
-| **3. Characteristic Endpoint ที่พบ (0x2901)** | 1. ..................................................<br/>2. ..................................................<br/>3. .................................................. |
-| **4. พฤติกรรมไฟ LED 2 (GPIO 4) ช่วงรอ vs ช่วงต่อ BLE** | ช่วงรอ: .......................................<br/>ช่วงต่อ: ....................................... |
-| **5. พฤติกรรมเมื่อต่อ Wi-Fi สำเร็จ** | มี Log คืนหน่วยความจำ Bluetooth หรือไม่? (มี / ไม่มี) |
+| **1. BLE Device Name ที่สแกนเจอ** | `PROV_`PROV_BC261C|
+| **2. Primary Service UUID (128-bit)** | ต้องตรวจสอบ UUID จริงจาก nRF Connect หรือ main/main.c ก่อนกรอก |
+| **3. Characteristic Endpoint ที่พบ (0x2901)** | 1. prov-session<br/>2. prov-config<br/>3. prov-scan |
+| **4. พฤติกรรมไฟ LED 2 (GPIO 4) ช่วงรอ vs ช่วงต่อ BLE** | ช่วงรอ: ต้องตรวจสอบจากการสังเกตไฟจริง <br/>ช่วงต่อ: ต้องตรวจสอบจากการสังเกตไฟจริง |
+| **5. พฤติกรรมเมื่อต่อ Wi-Fi สำเร็จ** | มี Log เกี่ยวกับการคืนหน่วยความจำ Bluetooth โดยพบ BTDM memory released หลัง Provisioning สำเร็จ |
 
 ---
 
 ## 7. คำถามท้ายการทดลอง (Post-Lab Questions)
 1. เหตุใด BLE Provisioning จึงไม่ส่งผลให้สัญญาณ Wi-Fi บนสมาร์ตโฟนของผู้ใช้หลุดระหว่างทำรายการ?
-2. Descriptor `0x2901` มีความสำคัญอย่างไรต่อการที่แอปพลิเคชันมือถือจะทราบว่า Characteristic แต่ละตัวใช้ทำหน้าที่อะไร?
-3. การที่ ESP-IDF มีฟังก์ชัน `esp_bt_mem_release()` มีประโยชน์อย่างไรต่อการทำงานของแอปพลิเคชัน IoT หลังเชื่อมต่อ Wi-Fi สำเร็จ?
+ตอบ : เนื่องจาก BLE Provisioning ใช้ Bluetooth Low Energy (BLE) ในการส่งข้อมูล SSID และรหัสผ่าน Wi-Fi จากสมาร์ตโฟนไปยัง ESP32 จึงไม่จำเป็นต้องให้สมาร์ตโฟนเชื่อมต่อกับ Wi-Fi Access Point ที่ ESP32 สร้างขึ้น ทำให้สมาร์ตโฟนสามารถคงการเชื่อมต่อ Wi-Fi เดิมไว้ได้ตามปกติ ทั้งนี้ขึ้นอยู่กับพฤติกรรมของระบบปฏิบัติการและแอปพลิเคชันด้วย
 
+2. Descriptor `0x2901` มีความสำคัญอย่างไรต่อการที่แอปพลิเคชันมือถือจะทราบว่า Characteristic แต่ละตัวใช้ทำหน้าที่อะไร?
+ตอบ : Descriptor 0x2901 หรือ Characteristic User Description ใช้เก็บข้อความอธิบาย Characteristic ทำให้แอปพลิเคชันสามารถอ่านชื่อหรือคำอธิบายเพื่อแยกหน้าที่ของแต่ละ Characteristic ได้ เช่น prov-session, prov-config, prov-scan, proto-ver และ custom-data ช่วยให้การสื่อสารระหว่างแอปพลิเคชันมือถือกับ ESP32 เป็นไปอย่างถูกต้อง
+
+3. การที่ ESP-IDF มีฟังก์ชัน `esp_bt_mem_release()` มีประโยชน์อย่างไรต่อการทำงานของแอปพลิเคชัน IoT หลังเชื่อมต่อ Wi-Fi สำเร็จ?
+ตอบ : ฟังก์ชันนี้ใช้คืนหน่วยความจำที่เกี่ยวข้องกับ Bluetooth Controller ซึ่งไม่จำเป็นต้องใช้งานแล้วกลับไปให้ระบบนำไปใช้ประโยชน์ต่อได้ ช่วยเพิ่มหน่วยความจำที่พร้อมใช้งานสำหรับงานอื่นของ ESP32 เช่น การประมวลผลข้อมูล การสื่อสารผ่าน Wi-Fi และการทำงานของแอปพลิเคชัน IoT โดยต้องเรียกใช้ในช่วงที่เหมาะสมตามข้อกำหนดของ ESP-IDF
