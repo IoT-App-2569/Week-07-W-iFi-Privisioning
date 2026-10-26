@@ -7,12 +7,12 @@
 #include "esp_event.h"
 #include "nvs_flash.h"
 #include "driver/gpio.h"
-#include "wifi_provisioning/manager.h"
-#include "wifi_provisioning/scheme_softap.h"
+#include "network_provisioning/manager.h"
+#include "network_provisioning/scheme_softap.h"
 
 static const char *TAG = "LAB7_1_RESET";
 
-#define FACTORY_RESET_BUTTON_GPIO  GPIO_NUM_18   // ปุ่ม Factory Reset (Active-Low ต่อลง GND)
+#define FACTORY_RESET_BUTTON_GPIO  GPIO_NUM_18   // ปุ่ม Factory Reset ภายนอก (Active-Low ต่อลง GND)
 #define LED_PIN_WIFI_STA           GPIO_NUM_2    // LED 1: สถานะ Wi-Fi Station (Onboard/External)
 
 typedef enum {
@@ -48,9 +48,16 @@ static void led_status_task(void *pvParameters)
     }
 }
 
-/* ตรวจสอบการกดปุ่ม GPIO 18 ค้างไว้ 3 วินาที (Active Low) */
+/*
+ * ตรวจสอบว่าจะต้อง Factory Reset หรือไม่ จาก 2 ทาง:
+ *   1) ตั้งค่า CONFIG_EXAMPLE_RESET_PROVISIONED = y ใน menuconfig
+ *      (Example Configuration -> Reset Provisioned state (Erase credentials))
+ *      -> Erase ทันทีโดยไม่ต้องกดปุ่ม
+ *   2) กดปุ่มกายภาพที่ GPIO 18 ค้างไว้ 3 วินาที (Active Low)
+ */
 static bool check_factory_reset_button(void)
 {
+    // กำหนดค่า GPIO 18 เป็น Input พร้อมเปิด Internal Pull-up Resistor
     gpio_config_t io_conf = {
         .pin_bit_mask = (1ULL << FACTORY_RESET_BUTTON_GPIO),
         .mode = GPIO_MODE_INPUT,
@@ -60,7 +67,15 @@ static bool check_factory_reset_button(void)
     };
     gpio_config(&io_conf);
 
+#ifdef CONFIG_EXAMPLE_RESET_PROVISIONED
+    // ถ้าเปิดใช้ตัวเลือกนี้ใน menuconfig ให้ Erase ทันทีโดยไม่ต้องกดปุ่ม
+    ESP_LOGW(TAG, "CONFIG_EXAMPLE_RESET_PROVISIONED is enabled — forcing reset");
+    return true;
+#endif
+
     ESP_LOGI(TAG, "Hold GPIO 18 button for 3 seconds to trigger Factory Reset...");
+
+    // ตรวจสอบสถานะปุ่มกดค้าง (Active Low / Logic 0)
     int hold_count = 0;
     while (gpio_get_level(FACTORY_RESET_BUTTON_GPIO) == 0) {
         vTaskDelay(pdMS_TO_TICKS(100));
@@ -68,7 +83,7 @@ static bool check_factory_reset_button(void)
         if (hold_count % 10 == 0) {
             ESP_LOGI(TAG, "Holding button... %d/3 seconds", hold_count / 10);
         }
-        if (hold_count >= 30) {
+        if (hold_count >= 30) { // กดค้างครบ 3 วินาที (30 x 100ms)
             ESP_LOGW(TAG, "=================================================");
             ESP_LOGW(TAG, ">>> FACTORY RESET TRIGGERED! ERASING NVS FLASH <<<");
             ESP_LOGW(TAG, "=================================================");
@@ -100,7 +115,7 @@ void app_main(void)
 {
     xTaskCreate(led_status_task, "led_task", 2048, NULL, 5, NULL);
 
-    // 1. ตรวจสอบการกดปุ่ม GPIO 18 ทางกายภาพ
+    // 1. ตรวจสอบการกดปุ่ม GPIO 18 ทางกายภาพ หรือ Config จาก menuconfig
     if (check_factory_reset_button()) {
         ESP_LOGW(TAG, "[FORENSIC]: User requested Flash Erase!");
         ESP_ERROR_CHECK(nvs_flash_erase());
@@ -125,26 +140,26 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler, NULL));
 
     // 4. ตรวจสอบสถานะว่าเคย Provision มาก่อนหรือไม่
-    wifi_prov_mgr_config_t config = {
-        .scheme = wifi_prov_scheme_softap, // default scheme
-        .scheme_event_handler = WIFI_PROV_EVENT_HANDLER_NONE
+    network_prov_mgr_config_t config = {
+        .scheme = network_prov_scheme_softap, // default scheme
+        .scheme_event_handler = NETWORK_PROV_EVENT_HANDLER_NONE
     };
-    ESP_ERROR_CHECK(wifi_prov_mgr_init(config));
+    ESP_ERROR_CHECK(network_prov_mgr_init(config));
 
     bool provisioned = false;
-    ESP_ERROR_CHECK(wifi_prov_mgr_is_provisioned(&provisioned));
+    ESP_ERROR_CHECK(network_prov_mgr_is_wifi_provisioned(&provisioned));
 
     if (!provisioned) {
         ESP_LOGW(TAG, "--------------------------------------------------");
         ESP_LOGW(TAG, "[STATUS]: Device is NOT provisioned (NVS is empty)");
         ESP_LOGW(TAG, "Ready for Provisioning Lab 7-2 (SoftAP) or 7-3 (BLE)!");
         ESP_LOGW(TAG, "--------------------------------------------------");
-        wifi_prov_mgr_deinit();
+        network_prov_mgr_deinit();
     } else {
         ESP_LOGI(TAG, "--------------------------------------------------");
         ESP_LOGI(TAG, "[STATUS]: Already provisioned! Starting Wi-Fi Station");
         ESP_LOGI(TAG, "--------------------------------------------------");
-        wifi_prov_mgr_deinit();
+        network_prov_mgr_deinit();
         ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
         ESP_ERROR_CHECK(esp_wifi_start());
     }

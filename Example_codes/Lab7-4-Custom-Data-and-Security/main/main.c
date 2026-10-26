@@ -1,3 +1,5 @@
+#include <stdlib.h>
+#include "esp_netif.h"
 #include <stdio.h>
 #include <string.h>
 #include "freertos/FreeRTOS.h"
@@ -91,6 +93,9 @@ void app_main(void)
     };
     ESP_ERROR_CHECK(wifi_prov_mgr_init(config));
 
+    // LAB TEST ONLY: clear previously saved provisioning credentials
+    ESP_ERROR_CHECK(wifi_prov_mgr_reset_provisioning());
+
     bool provisioned = false;
     ESP_ERROR_CHECK(wifi_prov_mgr_is_provisioned(&provisioned));
 
@@ -107,7 +112,7 @@ void app_main(void)
         wifi_prov_scheme_ble_set_service_uuid(custom_service_uuid);
 
         // 1. สร้าง Custom Endpoint ก่อนสั่ง Start Provisioning
-        wifi_prov_mgr_endpoint_create("custom-data");
+        ESP_ERROR_CHECK(wifi_prov_mgr_endpoint_create("custom-data"));
 
         // 2. เริ่มต้น Provisioning Service
         wifi_prov_security_t security = WIFI_PROV_SECURITY_1;
@@ -115,7 +120,13 @@ void app_main(void)
         ESP_ERROR_CHECK(wifi_prov_mgr_start_provisioning(security, (const void *)pop, service_name, NULL));
 
         // 3. ผูกฟังก์ชัน Callback เข้ากับ Endpoint หลัง Start Service
-        wifi_prov_mgr_endpoint_register("custom-data", custom_prov_data_handler, NULL);
+        ESP_ERROR_CHECK(
+            wifi_prov_mgr_endpoint_register(
+            "custom-data",
+            custom_prov_data_handler,
+            NULL
+            )
+        );
 
         gpio_set_level(LED_PIN_BLE_PROV, 1);
 

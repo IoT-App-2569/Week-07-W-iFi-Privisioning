@@ -106,15 +106,18 @@ wifi_prov_mgr_endpoint_register("custom-data", custom_prov_data_handler, NULL);
 3. **การทดสอบที่ 1 (ป้อน PoP ผิด):**
    - เมื่อแอปถามรหัส PoP ให้พิมพ์รหัสผ่านมั่ว เช่น `wrong1234`
    - สังเกตปฏิกิริยาบนแอปมือถือและใน Serial Monitor:
-     ```text
+     
      E (15600) app: Received incorrect username and/or PoP for establishing secure session!
-     ```
+
+     ![alt text](image-4.png)
+
 4. **การทดสอบที่ 2 (ป้อน PoP ถูกต้อง):**
    - สั่งรีเซ็ตบอร์ดใหม่ และเปิดแอปป้อน PoP เป็น `abcd1234` (ตรงกับค่าในโค้ด)
    - สังเกต Log:
-     ```text
+     
      I (18200) app: Secured session established!
-     ```
+
+     ![alt text](image-5.png)
 
 ---
 
@@ -122,9 +125,10 @@ wifi_prov_mgr_endpoint_register("custom-data", custom_prov_data_handler, NULL);
 1. ในหน้าแอป **ESP BLE Provisioning** หลังผ่านขั้นตอนความปลอดภัยแล้ว ให้เข้าไปที่เมนู **Custom Data** หรือส่งข้อมูลผ่านแอปที่รองรับการเขียน Custom Endpoint
 2. ป้อนข้อความ เช่น `STUDENT_ID:65010099` และกดส่ง
 3. สังเกต Serial Monitor จะปรากฏข้อความที่ได้รับจากสมาร์ตโฟน:
-   ```text
+   
    I (22150) app: Received custom data: STUDENT_ID:65010099
-   ```
+
+   ![alt text](image-6.png)
 
 ---
 
@@ -142,6 +146,8 @@ wifi_prov_mgr_endpoint_register("custom-data", custom_prov_data_handler, NULL);
    - หาก PoP ไม่ตรง $\rightarrow$ Trigger Event `PROTOCOMM_SECURITY_SESSION_CREDENTIALS_MISMATCH` และปฏิเสธการเชื่อมต่อ
    - หาก PoP ถูกต้อง $\rightarrow$ Trigger Event `PROTOCOMM_SECURITY_SESSION_SETUP_OK` และสร้าง AES Session Key สำเร็จ
 
+   ![alt text](image-7.png)
+
 ### ภารกิจที่ 2: ผังการรับส่งข้อมูลผ่าน Custom Endpoint (Custom Data Handler Flow)
 ให้นักศึกษาวาด Sequence / Data Flow ของฟังก์ชัน `custom_prov_data_handler()`:
 1. ข้อมูล `inbuf` ถูกส่งเข้ามาจากสมาร์ตโฟนผ่าน Protocomm
@@ -149,9 +155,10 @@ wifi_prov_mgr_endpoint_register("custom-data", custom_prov_data_handler, NULL);
 3. การจัดสรรหน่วยความจำแบบไดนามิกด้วย `strdup()` ให้กับ `*outbuf`
 4. ทำไมตัวแปร `*outbuf` จึงต้องจัดสรรใน Heap Memory (ทำไมจึงใช้ตัวแปร Local Static Array ธรรมดาไม่ได้)?
 
-```text
+
 [พื้นที่สำหรับแนบรูปภาพ Diagram ที่นักศึกษาเขียนขึ้นด้วย Draw.io / Mermaid / วาดมือ]
-```
+
+![alt text](image-8.png)
 
 ---
 
@@ -159,15 +166,23 @@ wifi_prov_mgr_endpoint_register("custom-data", custom_prov_data_handler, NULL);
 
 | สถานการณ์ทดสอบ | ค่า PoP ที่ป้อน | ผลลัพธ์บนแอปมือถือ | ข้อความ Log ใน Serial Monitor |
 | :--- | :--- | :--- | :--- |
-| **1. ป้อน PoP ผิดพลาด** | `wrong1234` | | |
-| **2. ป้อน PoP ถูกต้อง** | `abcd1234` | | |
-| **3. ส่ง Custom Data** | `TEST_DATA_999` | | |
+| **1. ป้อน PoP ผิดพลาด** | `wrong1234` | ไม่สามารถสร้าง Secure Session ได้ และการ Provisioning ไม่สามารถดำเนินการต่อได้ | คาดว่าจะพบ Event PROTOCOMM_SECURITY_SESSION_CREDENTIALS_MISMATCH หรือข้อความแจ้งข้อผิดพลาดด้าน Security |
+| **2. ป้อน PoP ถูกต้อง** | `abcd1234` | เชื่อมต่อและสร้าง Secure Session สำเร็จ สามารถดำเนินการ Provisioning ต่อได้ | [SECURITY SUCCESS]: Valid PoP! Secured Session OK! |
+| **3. ส่ง Custom Data** | `TEST_DATA_999` | ส่งข้อมูลไปยัง Custom Endpoint และได้รับข้อความตอบกลับ หากแอปรองรับการส่ง Custom Data | [CUSTOM DATA RECEIVED]: TEST_DATA_999 |
 
 ---
 
 ## 8. คำถามท้ายการทดลอง (Post-Lab Questions)
 1. การใช้ **Proof-of-Possession (PoP)** ช่วยป้องกันการโจมตีประเภทใดได้บ้าง?
+ตอบ : ช่วยป้องกันการเชื่อมต่อจากผู้ที่ไม่มีค่า PoP ที่ถูกต้อง ทำให้ผู้ที่ไม่ได้รับอนุญาตสร้าง Secure Session ได้ยากขึ้น
+
 2. หากไม่มีการใช้ PoP (เช่น ใน Security 0) ผู้โจมตีที่อยู่ในรัศมีสัญญาณบลูทูธสามารถทำสิ่งใดกับอุปกรณ์ได้บ้าง?
+ตอบ : ผู้โจมตีอาจพยายามเชื่อมต่อและส่งข้อมูล Provisioning เพื่อกำหนดค่า Wi-Fi หรือส่งข้อมูลไปยัง Endpoint ที่เปิดใช้งานอยู่ได้ โดยขึ้นอยู่กับการตั้งค่าของอุปกรณ์
+
 3. ในการประยุกต์ใช้งานเชิงพาณิชย์จริง เราสามารถนำ **Custom Data Endpoint** ไปใช้ส่งข้อมูลประเภทใดได้อีกบ้าง (ยกตัวอย่าง 2 กรณี)?
+ตอบ : 1. ใช้ส่งรหัสอุปกรณ์ (Device ID) เพื่อเชื่อมโยงอุปกรณ์กับบัญชีผู้ใช้
+      2. ใช้ส่งค่ากำหนด เช่น หมายเลขห้องหรือโหมดการทำงานของอุปกรณ์ IoT
+
 4. ในฟังก์ชัน `custom_prov_data_handler()` เหตุใดหน่วยความจำที่จัดสรรให้ `*outbuf` จึงถูก Free โดย Protocomm Layer อัตโนมัติหลังจากส่งข้อมูลเสร็จ?
+ตอบ : เพราะข้อมูลใน *outbuf ต้องคงอยู่หลังจากฟังก์ชัน Handler ทำงานเสร็จ Protocomm จึงนำข้อมูลไปส่งให้ Client ก่อนคืนหน่วยความจำตามข้อตกลงของ API ช่วยลดปัญหาหน่วยความจำรั่วไหล (Memory Leak)
 
