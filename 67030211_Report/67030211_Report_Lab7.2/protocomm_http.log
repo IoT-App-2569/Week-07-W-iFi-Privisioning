@@ -1,5 +1,0 @@
-Protocomm SoftAP Provisioning Handshake:
-1. Endpoint: POST /prov-scan -> Discovered APs list returned (Protobuf format)
-2. Endpoint: POST /prov-config -> Applied SSID: "Faculty-IoT-Lab"
-3. Endpoint: POST /proto-ver -> Version 1.0 (Sec0)
-Response: Provisioning state: SUCCESS, connecting to AP...
