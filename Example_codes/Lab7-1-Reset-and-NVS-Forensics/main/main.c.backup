@@ -1,0 +1,51 @@
+#include "driver/gpio.h"
+
+#define FACTORY_RESET_BUTTON_GPIO  GPIO_NUM_18   // ปุ่ม Factory Reset ภายนอก (ต่อลง GND)
+
+
+void app_main(void)
+{
+    // ตรวจสอบการกดปุ่ม Factory Reset ทางกายภาพ (GPIO 18)
+    if (check_factory_reset_button()) {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+    }
+
+    /* Initialize NVS partition */
+    esp_err_t ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ESP_ERROR_CHECK(nvs_flash_init());
+    }
+    // ... โค้ดเดิมต่อจากนี้ ...
+    
+static bool check_factory_reset_button(void)
+{
+    // กำหนดค่า GPIO 18 เป็น Input พร้อมเปิด Internal Pull-up Resistor
+    gpio_config_t io_conf = {
+        .pin_bit_mask = (1ULL << FACTORY_RESET_BUTTON_GPIO),
+        .mode = GPIO_MODE_INPUT,
+        .pull_up_en = GPIO_PULLUP_ENABLE,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .intr_type = GPIO_INTR_DISABLE,
+    };
+    gpio_config(&io_conf);
+
+    ESP_LOGI("FACTORY_RESET", "Hold GPIO 18 button for 3 seconds to trigger Factory Reset...");
+    
+    // ตรวจสอบสถานะปุ่มกดค้าง (Active Low / Logic 0)
+    int hold_count = 0;
+    while (gpio_get_level(FACTORY_RESET_BUTTON_GPIO) == 0) {
+        vTaskDelay(pdMS_TO_TICKS(100));
+        hold_count++;
+        if (hold_count % 10 == 0) {
+            ESP_LOGI("FACTORY_RESET", "Holding button... %d/3 seconds", hold_count / 10);
+        }
+        if (hold_count >= 30) { // กดค้างครบ 3 วินาที (30 x 100ms)
+            ESP_LOGW("FACTORY_RESET", "=================================================");
+            ESP_LOGW("FACTORY_RESET", ">>> FACTORY RESET TRIGGERED! ERASING NVS FLASH <<<");
+            ESP_LOGW("FACTORY_RESET", "=================================================");
+            return true;
+        }
+    }
+    return false;
+}

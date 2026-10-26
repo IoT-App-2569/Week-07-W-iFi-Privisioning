@@ -1,1 +1,43 @@
-**/build/**
+# ESP-IDF build output
+build/
+
+# ESP-IDF generated files
+sdkconfig
+sdkconfig.old
+dependencies.lock
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# macOS
+.DS_Store
+```gitignore
+# ESP-IDF build output
+build/
+sdkconfig
+sdkconfig.old
+sdkconfig.*
+!sdkconfig.defaults
+
+# ESP-IDF managed components
+managed_components/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environments
+venv/
+.venv/
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# ESP-IDF generated files
+dependencies.lock
