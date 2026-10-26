@@ -1,0 +1,7 @@
+Security Scheme 1 (Sec1) with Proof of Possession (PoP):
+PoP used: "SecretPass2569"
+ECDH Key Exchange: Shared Secret established.
+AES-CTR-128 Encryption Active.
+Custom Endpoint: /custom-data
+Decrypted Payload: {"owner": "Witchayaporn", "student_id": "67030211", "dept": "IoT"}
+Status: 200 OK.

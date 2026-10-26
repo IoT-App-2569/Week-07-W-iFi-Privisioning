@@ -1,0 +1,6 @@
+BLE Provisioning GATT Profile:
+- Device Name: PROV_67030211
+- Primary Service UUID: 0000ffff-0000-1000-8000-00805f9b34fb
+- Characteristic UUID (prov-session): 0000ff51-0000-1000-8000-00805f9b34fb (Write/Notify)
+- Characteristic UUID (prov-config):  0000ff52-0000-1000-8000-00805f9b34fb (Write/Read)
+GATT MTU Negotiated: 512 bytes.

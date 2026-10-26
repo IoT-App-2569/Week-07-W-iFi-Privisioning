@@ -1,0 +1,8 @@
+ESP-IDF NVS Partition Inspector (0x9000):
+Namespace: nvs.net80211
+Key: sta.ssid      | Type: SZ    | Value: "Faculty-IoT-Lab"
+Key: sta.pswd      | Type: SZ    | Value: "iotpassword123"
+Key: sta.authmode  | Type: U8    | Value: 3 (WPA2_PSK)
+Button GPIO0 Long-press detected (> 5 seconds):
+I (14520) prov_reset: Erasing NVS Wi-Fi Credentials partition...
+I (14610) prov_reset: NVS Erase complete. Rebooting into Provisioning Mode...
