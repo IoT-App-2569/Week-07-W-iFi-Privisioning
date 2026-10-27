@@ -18,7 +18,7 @@
 
 ESP-IDF ออกแบบโมดูล Wi-Fi Provisioning ให้เป็นแบบ **Modular & Layered Architecture** แบ่งการทำงานออกเป็น 3 เลเยอร์หลัก:
 
-<p align="center"><img src="Fig_01-WiFi-Provisioning-Architecture-and-Protocomm_2026-10-25T10-41-23_academic.svg" alt="01-WiFi-Provisioning-Architecture-and-Protocomm" width="400" style="max-width: 400px; width: 100%; height: auto;" ></p>
+<p align="center"><img src="Fig_01-WiFi-Provisioning-Architecture-and-Protocomm_2026-10-25T10-41-23_academic.svg" alt="01-WiFi-Provisioning-Architecture-and-Protocomm" width="400" ></p>
 <p align="center"><b></b> สถาปัตยกรรม Provisioning Subsystem ใน ESP-IDF</p>
 
 ### องค์ประกอบสำคัญ:
