@@ -1,1 +1,10 @@
-**/build/**
+# ESP-IDF Build Artifacts & Managed Components
+**/build/
+**/managed_components/
+**/dependencies.lock
+sdkconfig.old
+sdkconfig.ci
+
+# Temporary & Editor files
+*.tmp
+.vscode/
