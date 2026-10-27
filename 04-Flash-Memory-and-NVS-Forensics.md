@@ -15,7 +15,7 @@
 
 โดยทั่วไป โครงสร้าง Partition ของ ESP32 จะถูกนิยามไว้ในไฟล์ `partitions.csv`
 
-<p align="center"><img src="Fig_04-Flash-Memory-and-NVS-Forensics_2026-10-25T10-44-26_academic.svg" alt="04-Flash-Memory-and-NVS-Forensics" width="600" style="max-width: 600px; width: 100%; height: auto;" ></p>
+<p align="center"><img src="Fig_04-Flash-Memory-and-NVS-Forensics_2026-10-25T10-44-26_academic.svg" alt="04-Flash-Memory-and-NVS-Forensics" ></p>
 <p align="center"><b></b>แผนผัง Flash Memory &amp; Partition Table</p>
 
 ### การตรวจสอบจาก Bootloader Log
@@ -34,7 +34,7 @@ I (71) boot:  2 factory    factory app    00 00 00010000 00100000
 
 NVS ถูกออกแบบให้เป็นระบบ **Key-Value Store** ที่ทนทานต่อไฟดับกะทันหัน (Power-cut resilient) และมีการทำ Wear-Leveling ภายใน
 
-<p align="center"><img src="Fig_04-Flash-Memory-and-NVS-Forensics_2026-10-25T10-44-49_academic.svg" alt="04-Flash-Memory-and-NVS-Forensics" style=" width: 100%; height: auto;" ></p>
+<p align="center"><img src="Fig_04-Flash-Memory-and-NVS-Forensics_2026-10-25T10-44-49_academic.svg" alt="04-Flash-Memory-and-NVS-Forensics"  ></p>
 <p align="center"><b></b> โครงสร้างภายในของ NVS Partition</p>
 ### รายละเอียดของแต่ละ Entry Slot (32 ไบต์):
 - **Namespace Index (1 Byte)** กลุ่มข้อมูล เช่น `nvs.net80211`, `custom_cfg`

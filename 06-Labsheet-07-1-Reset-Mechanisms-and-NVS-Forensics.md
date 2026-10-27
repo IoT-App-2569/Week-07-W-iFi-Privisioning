@@ -38,7 +38,7 @@
 - อีกขาหนึ่งของสวิตช์ $\rightarrow$ ต่อลง **GND**
 *(เปิดใช้งาน Internal Pull-up Resistor ในโค้ด จึงไม่ต้องต่อตัวต้านทานภายนอกเพิ่ม)*
 
-<p align="center"><img src="Fig_06-Labsheet-07-1-Reset-Mechanisms-and-NVS-Forensics_2026-10-25T10-45-34_academic.svg" alt="06-Labsheet-07-1-Reset-Mechanisms-and-NVS-Forensics" width="800" style="max-width: 800px; width: 100%; height: auto;" ></p>
+<p align="center"><img src="Fig_06-Labsheet-07-1-Reset-Mechanisms-and-NVS-Forensics_2026-10-25T10-45-34_academic.svg" alt="06-Labsheet-07-1-Reset-Mechanisms-and-NVS-Forensics"></p>
 <p align="center"><b></b>การต่อวงจรปุ่มกด Factory Reset (GPIO 18)</p>
 
 ---

@@ -40,7 +40,7 @@ Security 1 เป็นโหมดความปลอดภัยมาตร
 
 Security 2 อิงตามมาตรฐาน **SRP6a (Secure Remote Password Protocol - RFC 5054)** ซึ่งเป็นโปรโตคอลการพิสูจน์ตัวตนแบบ **Zero-Knowledge Proof (ZKP)**
 
-<p align="center"><img src="Fig_03-Provisioning-Security-and-Cryptography_2026-10-25T10-43-58_academic.svg" alt="03-Provisioning-Security-and-Cryptography" width="800" style="max-width: 600px; width: 100%; height: auto;" ></p>
+<p align="center"><img src="Fig_03-Provisioning-Security-and-Cryptography_2026-10-25T10-43-58_academic.svg" alt="03-Provisioning-Security-and-Cryptography" width="600"  ></p>
 <p align="center"><b></b>  Security 2 (SRP6a + AES-GCM)</p>
 
 ### ข้อได้เปรียบทางด้าน Forensic & Security ของ Sec2
