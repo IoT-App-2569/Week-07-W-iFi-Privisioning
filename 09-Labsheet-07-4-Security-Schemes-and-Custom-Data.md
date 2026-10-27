@@ -135,23 +135,27 @@ wifi_prov_mgr_endpoint_register("custom-data", custom_prov_data_handler, NULL);
 ให้นักศึกษาแกะรอยการทำงานด้านความปลอดภัยและ Custom Handler ใน `main/main.c` แล้วเขียน **ผังการไหลของข้อมูล (Data Flow & Cryptographic Handshake Flow)**:
 
 ### ภารกิจที่ 1: ผังขั้นตอนการตรวจสอบ PoP (Security Handshake Decision Flow)
-ให้นักศึกษาวาด Flowchart แสดงการแลกเปลี่ยนคีย์และตรวจสอบสิทธิ์:
-1. การสร้าง Session Parameters ด้วยค่า PoP (`abcd1234`)
-2. เมื่อ Client ส่ง Public Key + Verification Hash มาให้ ESP32
-3. จุดแยกทางเลือก (Branching):
-   - หาก PoP ไม่ตรง $\rightarrow$ Trigger Event `PROTOCOMM_SECURITY_SESSION_CREDENTIALS_MISMATCH` และปฏิเสธการเชื่อมต่อ
-   - หาก PoP ถูกต้อง $\rightarrow$ Trigger Event `PROTOCOMM_SECURITY_SESSION_SETUP_OK` และสร้าง AES Session Key สำเร็จ
+Flowchart แสดงลำดับขั้นตอนการแลกเปลี่ยนคีย์และตรวจสอบสิทธิ์ Proof-of-Possession (PoP):
+
+![ผังขั้นตอนการตรวจสอบ PoP (Security Handshake Decision Flow)](lab7_4_mission1_pop_flow.png)
+
+---
 
 ### ภารกิจที่ 2: ผังการรับส่งข้อมูลผ่าน Custom Endpoint (Custom Data Handler Flow)
-ให้นักศึกษาวาด Sequence / Data Flow ของฟังก์ชัน `custom_prov_data_handler()`:
-1. ข้อมูล `inbuf` ถูกส่งเข้ามาจากสมาร์ตโฟนผ่าน Protocomm
-2. การพิมพ์ข้อความ Log ด้วย `ESP_LOGI()`
-3. การจัดสรรหน่วยความจำแบบไดนามิกด้วย `strdup()` ให้กับ `*outbuf`
-4. ทำไมตัวแปร `*outbuf` จึงต้องจัดสรรใน Heap Memory (ทำไมจึงใช้ตัวแปร Local Static Array ธรรมดาไม่ได้)?
+Sequence Diagram แสดงการรับส่งข้อมูลผ่านฟังก์ชัน `custom_prov_data_handler()`:
 
-```text
-[พื้นที่สำหรับแนบรูปภาพ Diagram ที่นักศึกษาเขียนขึ้นด้วย Draw.io / Mermaid / วาดมือ]
-```
+![ผังการรับส่งข้อมูลผ่าน Custom Endpoint (Custom Data Handler Flow)](lab7_4_mission2_custom_flow.png)
+
+#### การวิเคราะห์การจัดสรรหน่วยความจำสำหรับ `*outbuf`
+**คำถาม:** ทำไมตัวแปร `*outbuf` จึงต้องจัดสรรใน Heap Memory (ทำไมจึงใช้ตัวแปร Local Static Array ธรรมดาไม่ได้)?
+
+**คำอธิบายเชิงลึก:**
+1. **ข้อจำกัดของตัวแปร Local Stack Array (`char response[] = "..."`)**:  
+   ตัวแปรโลคอลธรรมดาจะถูกจองอยู่บน Stack Memory ของฟังก์ชัน `custom_prov_data_handler()` ซึ่งจะถูกทำลายและคืนพื้นที่สแตกลงทันทีที่ฟังก์ชันทำงานเสร็จสิ้นและ Return หากเราส่ง Pointer ของสแตกออกไปภายนอก จะเกิดสภาวะ **Dangling Pointer** ข้อมูลจะถูกเขียนทับโดย Stack Frame ของฟังก์ชันถัดไปทันที ส่งผลให้ข้อมูลที่ส่งไปยังมือถือเสียหาย (Memory Corruption) หรือระบบเกิดความขัดข้องจนแครช
+2. **ข้อจำกัดของตัวแปร Local Static Array (`static char response[] = "..."`)**:  
+   แม้ว่าตัวแปรแบบ `static` จะไม่ถูกทำลายหลังจบฟังก์ชัน แต่ตัวแปร static จะมีขนาดตายตัว ไม่ยืดหยุ่นต่อข้อมูลตอบกลับที่ขนาดเปลี่ยนแปลงได้ และที่สำคัญที่สุดคือ สถาปัตยกรรมของ Protocomm Layer ถูกออกแบบตามหลัก **Dynamic Memory Ownership Transfer** ซึ่ง Protocomm จะสั่งเรียกฟังก์ชัน `free(*outbuf)` โดยอัตโนมัติหลังจากส่งแพ็กเก็ตเสร็จ หากส่งแอดเดรสของตัวแปร `static` เข้าไป จะทำให้ฟังก์ชัน `free()` ทำงานผิดพลาดและเกิด **Heap Corruption Crash** ทันที เนื่องจากหน่วยความจำ static ไม่ได้ถูกจองมาจาก Heap
+3. **ข้อสรุป**:  
+   การจองพื้นที่บน **Heap Memory** ด้วยฟังก์ชัน `strdup()` หรือ `malloc()` เป็นแนวทางที่ถูกต้องและจำเป็น เพื่อให้หน่วยความจำคงอยู่อย่างปลอดภัยตลอดช่วงเวลาที่ Protocomm นำข้อมูลไปเข้าคิวและส่งสัญญาณออกอากาศแบบอะซิงโครนัส (Asynchronous Transmission) และส่งมอบกรรมสิทธิ์ (Ownership) ให้ Protocomm สามารถเรียก `free()` คืนแรมสู่ระบบได้อย่างสมบูรณ์หลังการส่งสำเร็จ
 
 ---
 
@@ -159,15 +163,43 @@ wifi_prov_mgr_endpoint_register("custom-data", custom_prov_data_handler, NULL);
 
 | สถานการณ์ทดสอบ | ค่า PoP ที่ป้อน | ผลลัพธ์บนแอปมือถือ | ข้อความ Log ใน Serial Monitor |
 | :--- | :--- | :--- | :--- |
-| **1. ป้อน PoP ผิดพลาด** | `wrong1234` | | |
-| **2. ป้อน PoP ถูกต้อง** | `abcd1234` | | |
-| **3. ส่ง Custom Data** | `TEST_DATA_999` | | |
+| **1. ป้อน PoP ผิดพลาด** | `wrong1234` | แสดงข้อความแจ้งเตือน "Please retry with correct proof of possession PIN." บนหน้าจอ | `[SECURITY ALERT]: INVALID PoP / Unauthorized Access!` |
+| **2. ป้อน PoP ถูกต้อง** | `abcd1234` | แลกเปลี่ยนคีย์สำเร็จ และผ่านเข้าสู่หน้าเลือกเครือข่าย Wi-Fi | `[SECURITY SUCCESS]: Valid PoP! Secured Session OK!` |
+| **3. ส่ง Custom Data** | `STUDENT_ID:65010099` (หรือ `TEST_DATA_999`) | แอปพลิเคชันได้รับข้อความตอบกลับ `ACK_FROM_ESP32_SUCCESS` | `[CUSTOM DATA RECEIVED]: STUDENT_ID:65010099` |
+
+### รูปภาพผลการทดลองจริงจากสมาร์ตโฟน (ป้อน PoP ผิดพลาด)
+
+![ผลการป้อน PoP ผิดพลาดบนแอป ESP BLE Provisioning](lab7_4_wrong_pop.jpg)
 
 ---
 
 ## 8. คำถามท้ายการทดลอง (Post-Lab Questions)
-1. การใช้ **Proof-of-Possession (PoP)** ช่วยป้องกันการโจมตีประเภทใดได้บ้าง?
-2. หากไม่มีการใช้ PoP (เช่น ใน Security 0) ผู้โจมตีที่อยู่ในรัศมีสัญญาณบลูทูธสามารถทำสิ่งใดกับอุปกรณ์ได้บ้าง?
-3. ในการประยุกต์ใช้งานเชิงพาณิชย์จริง เราสามารถนำ **Custom Data Endpoint** ไปใช้ส่งข้อมูลประเภทใดได้อีกบ้าง (ยกตัวอย่าง 2 กรณี)?
-4. ในฟังก์ชัน `custom_prov_data_handler()` เหตุใดหน่วยความจำที่จัดสรรให้ `*outbuf` จึงถูก Free โดย Protocomm Layer อัตโนมัติหลังจากส่งข้อมูลเสร็จ?
+
+### 1. การใช้ Proof-of-Possession (PoP) ช่วยป้องกันการโจมตีประเภทใดได้บ้าง?
+**คำตอบ:**  
+การใช้ Proof-of-Possession (PoP) ช่วยป้องกันการโจมตีประเภท **Man-in-the-Middle (MitM) Attack** และการโจมตีแบบ **Rogue Provisioning / Device Hijacking** โดยผู้โจมตีที่อยู่ในรัศมีการกระจายสัญญาณวิทยุ (เช่น สัญญาณ Wi-Fi หรือ Bluetooth) จะไม่สามารถสวมรอยหรือส่งข้อมูลเพื่อยึดครองอุปกรณ์ได้ หากไม่มีรหัสผ่านยืนยันสิทธิ์ครอบครองทางกายภาพ (Physical Possession) ซึ่งมักติดอยู่บนตัวผลิตภัณฑ์ ฉลากสินค้า หรือแสดงผ่านหน้าจอของอุปกรณ์จริงเท่านั้น
+
+---
+
+### 2. หากไม่มีการใช้ PoP (เช่น ใน Security 0) ผู้โจมตีที่อยู่ในรัศมีสัญญาณบลูทูธสามารถทำสิ่งใดกับอุปกรณ์ได้บ้าง?
+**คำตอบ:**  
+ในโหมด **Security 0** การสื่อสารจะเป็นแบบเปิดเผย ไม่มีการเข้ารหัสความปลอดภัยและไม่มีการยืนยันตัวตน ผู้โจมตีที่อยู่ในรัศมีสัญญาณสามารถกระทำการดังต่อไปนี้ได้:
+1. **การดักรับข้อมูล (Eavesdropping / Packet Sniffing):** สามารถดักจับแพ็กเก็ตข้อมูลและอ่านชื่อเครือข่าย Wi-Fi (SSID) รวมถึงรหัสผ่าน (Password) ที่ส่งผ่านอากาศในรูปแบบข้อความธรรมดา (Plaintext) ได้โดยตรง
+2. **การยึดครองอุปกรณ์ (Unauthorized Device Provisioning):** สามารถส่งคำสั่ง Provisioning เข้าไปยังบอร์ด ESP32 เพื่อบังคับให้อุปกรณ์เชื่อมต่อไปยัง Access Point ปลอม (Rogue AP) ของผู้ไม่หวังดี ทำให้สามารถดักจับการสื่อสารทั้งหมดของอุปกรณ์ในอนาคตได้
+
+---
+
+### 3. ในการประยุกต์ใช้งานเชิงพาณิชย์จริง เราสามารถนำ Custom Data Endpoint ไปใช้ส่งข้อมูลประเภทใดได้อีกบ้าง (ยกตัวอย่าง 2 กรณี)?
+**คำตอบ:**  
+1. **การผูกบัญชีผู้ใช้และการเปิดใช้งานอุปกรณ์ (Device Activation & User Binding):** การส่ง User Account Token, Registration Key หรือ Customer UUID จากแอปพลิเคชันมือถือไปให้อุปกรณ์ เพื่อทำการผูกอุปกรณ์เข้ากับบัญชีผู้ใช้ในระบบ Cloud IoT (เช่น AWS IoT Core, Google Cloud IoT หรือ Tuya Platform) ทันทีหลังเชื่อมต่อโครงข่ายสำเร็จ
+2. **การกำหนดค่าพารามิเตอร์ของระบบ (System Configuration & MQTT Broker Settings):** การส่งค่า URL และ Port ของ Local MQTT Broker, รหัส Organization/Tenant ID, หรือค่าพารามิเตอร์เฉพาะ เช่น โซนเวลา (Timezone) และชื่อตำแหน่งติดตั้งของเซนเซอร์
+
+---
+
+### 4. ในฟังก์ชัน `custom_prov_data_handler()` เหตุใดหน่วยความจำที่จัดสรรให้ `*outbuf` จึงถูก Free โดย Protocomm Layer อัตโนมัติหลังจากส่งข้อมูลเสร็จ?
+**คำตอบ:**  
+การออกแบบสถาปัตยกรรมของ Protocomm Layer ใช้หลักการ **Ownership Transfer (การโอนย้ายกรรมสิทธิ์การครอบครองหน่วยความจำ)** เพื่อให้การทำงานมีประสิทธิภาพและป้องกันปัญหาหน่วยความจำรั่วไหล (Memory Leak):
+- ฟังก์ชัน Callback (`custom_prov_data_handler`) มีหน้าที่เพียงจัดเตรียมข้อมูลคำตอบและคืนค่า Pointer ของหน่วยความจำ Heap ที่จองด้วย `strdup()` หรือ `malloc()` ให้แก่ Protocomm Layer
+- เนื่องจากกระบวนการส่งข้อมูลไปยังฮาร์ดแวร์ปลายทาง (BLE GATT Server หรือ HTTP Server) เป็นการทำงานแบบอะซิงโครนัส (Asynchronous) ตัวฟังก์ชัน Handler จึงไม่สามารถสั่ง `free()` ทันทีภายในฟังก์ชันได้ (เพราะหากสั่ง `free()` ข้อมูลจะถูกทำลายก่อนที่แพ็กเก็ตจะถูกส่งข้ามเครือข่าย)
+- ดังนั้น Protocomm Layer จึงรับหน้าที่เป็นผู้ครอบครองบล็อกหน่วยความจำนั้น นำข้อมูลไปเข้ารหัสและส่งออกไปยัง Transport Stack จนกระทั่งส่งแพ็กเก็ตสำเร็จสมบูรณ์ จึงทำการเรียกคำสั่ง `free(*outbuf)` โดยอัตโนมัติ เพื่อคืนพื้นที่แรมสู่ Heap Memory ของระบบอย่างปลอดภัย
 

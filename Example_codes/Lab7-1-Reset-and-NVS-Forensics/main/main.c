@@ -7,12 +7,12 @@
 #include "esp_event.h"
 #include "nvs_flash.h"
 #include "driver/gpio.h"
-#include "wifi_provisioning/manager.h"
-#include "wifi_provisioning/scheme_softap.h"
+#include "network_provisioning/manager.h"
+#include "network_provisioning/scheme_softap.h"
 
 static const char *TAG = "LAB7_1_RESET";
 
-#define FACTORY_RESET_BUTTON_GPIO  GPIO_NUM_18   // ปุ่ม Factory Reset (Active-Low ต่อลง GND)
+#define FACTORY_RESET_BUTTON_GPIO  GPIO_NUM_0    // ปุ่ม Factory Reset โดยใช้ปุ่ม BOOT บนบอร์ด (Active-Low ต่อลง GND)
 #define LED_PIN_WIFI_STA           GPIO_NUM_2    // LED 1: สถานะ Wi-Fi Station (Onboard/External)
 
 typedef enum {
@@ -48,7 +48,7 @@ static void led_status_task(void *pvParameters)
     }
 }
 
-/* ตรวจสอบการกดปุ่ม GPIO 18 ค้างไว้ 3 วินาที (Active Low) */
+/* ตรวจสอบการกดปุ่ม BOOT (GPIO 0) บนบอร์ดค้างไว้ 3 วินาที (Active Low) */
 static bool check_factory_reset_button(void)
 {
     gpio_config_t io_conf = {
@@ -60,21 +60,36 @@ static bool check_factory_reset_button(void)
     };
     gpio_config(&io_conf);
 
-    ESP_LOGI(TAG, "Hold GPIO 18 button for 3 seconds to trigger Factory Reset...");
+    ESP_LOGI(TAG, "--------------------------------------------------");
+    ESP_LOGI(TAG, "Press and HOLD 'BOOT' button (GPIO 0) within 3 seconds to Factory Reset...");
+    ESP_LOGI(TAG, "--------------------------------------------------");
+
     int hold_count = 0;
-    while (gpio_get_level(FACTORY_RESET_BUTTON_GPIO) == 0) {
+    // รอตรวจจับการกดปุ่มเป็นเวลา 3 วินาที (30 รอบ x 100ms) หลังเริ่มบูต
+    for (int wait_tick = 0; wait_tick < 30; wait_tick++) {
+        if (gpio_get_level(FACTORY_RESET_BUTTON_GPIO) == 0) {
+            // เมื่อตรวจพบการกดปุ่ม BOOT ให้เริ่มนับเวลาการกดค้าง
+            while (gpio_get_level(FACTORY_RESET_BUTTON_GPIO) == 0) {
+                vTaskDelay(pdMS_TO_TICKS(100));
+                hold_count++;
+                if (hold_count % 10 == 0) {
+                    ESP_LOGI(TAG, "Holding BOOT button... %d/3 seconds", hold_count / 10);
+                }
+                if (hold_count >= 30) { // กดค้างครบ 3 วินาที (30 x 100ms)
+                    ESP_LOGW(TAG, "=================================================");
+                    ESP_LOGW(TAG, ">>> FACTORY RESET TRIGGERED! ERASING NVS FLASH <<<");
+                    ESP_LOGW(TAG, "=================================================");
+                    return true;
+                }
+            }
+            // หากปล่อยมือก่อนครบ 3 วินาที ให้ยกเลิกการรีเซ็ต
+            ESP_LOGW(TAG, "BOOT button released early (%d.%d s). Cancelled reset.", hold_count / 10, hold_count % 10);
+            return false;
+        }
         vTaskDelay(pdMS_TO_TICKS(100));
-        hold_count++;
-        if (hold_count % 10 == 0) {
-            ESP_LOGI(TAG, "Holding button... %d/3 seconds", hold_count / 10);
-        }
-        if (hold_count >= 30) {
-            ESP_LOGW(TAG, "=================================================");
-            ESP_LOGW(TAG, ">>> FACTORY RESET TRIGGERED! ERASING NVS FLASH <<<");
-            ESP_LOGW(TAG, "=================================================");
-            return true;
-        }
     }
+
+    ESP_LOGI(TAG, "No reset requested. Proceeding with normal boot...");
     return false;
 }
 
@@ -100,7 +115,7 @@ void app_main(void)
 {
     xTaskCreate(led_status_task, "led_task", 2048, NULL, 5, NULL);
 
-    // 1. ตรวจสอบการกดปุ่ม GPIO 18 ทางกายภาพ
+    // 1. ตรวจสอบการกดปุ่ม BOOT (GPIO 0) ทางกายภาพบนตัวบอร์ด
     if (check_factory_reset_button()) {
         ESP_LOGW(TAG, "[FORENSIC]: User requested Flash Erase!");
         ESP_ERROR_CHECK(nvs_flash_erase());
@@ -125,26 +140,26 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler, NULL));
 
     // 4. ตรวจสอบสถานะว่าเคย Provision มาก่อนหรือไม่
-    wifi_prov_mgr_config_t config = {
-        .scheme = wifi_prov_scheme_softap, // default scheme
-        .scheme_event_handler = WIFI_PROV_EVENT_HANDLER_NONE
+    network_prov_mgr_config_t config = {
+        .scheme = network_prov_scheme_softap, // default scheme
+        .scheme_event_handler = NETWORK_PROV_EVENT_HANDLER_NONE
     };
-    ESP_ERROR_CHECK(wifi_prov_mgr_init(config));
+    ESP_ERROR_CHECK(network_prov_mgr_init(config));
 
     bool provisioned = false;
-    ESP_ERROR_CHECK(wifi_prov_mgr_is_provisioned(&provisioned));
+    ESP_ERROR_CHECK(network_prov_mgr_is_wifi_provisioned(&provisioned));
 
     if (!provisioned) {
         ESP_LOGW(TAG, "--------------------------------------------------");
         ESP_LOGW(TAG, "[STATUS]: Device is NOT provisioned (NVS is empty)");
         ESP_LOGW(TAG, "Ready for Provisioning Lab 7-2 (SoftAP) or 7-3 (BLE)!");
         ESP_LOGW(TAG, "--------------------------------------------------");
-        wifi_prov_mgr_deinit();
+        network_prov_mgr_deinit();
     } else {
         ESP_LOGI(TAG, "--------------------------------------------------");
         ESP_LOGI(TAG, "[STATUS]: Already provisioned! Starting Wi-Fi Station");
         ESP_LOGI(TAG, "--------------------------------------------------");
-        wifi_prov_mgr_deinit();
+        network_prov_mgr_deinit();
         ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
         ESP_ERROR_CHECK(esp_wifi_start());
     }
