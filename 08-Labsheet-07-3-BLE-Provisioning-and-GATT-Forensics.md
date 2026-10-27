@@ -26,21 +26,8 @@
 
 ## 3. สถาปัตยกรรม GATT Services & Endpoints บน BLE Scheme
 
-```mermaid
-graph TD
-    subgraph BLE_Device["ESP32 BLE Device (Name: PROV_XXXXXX)"]
-        direction TB
-        Service["Primary Service UUID: 021a9004-0382-4aea-bff4-6b3f1c5adfb4"]
-        
-        Char1["Characteristic 1 (UUID: ...FF51)<br/>Descriptor 0x2901: 'prov-session'"]
-        Char2["Characteristic 2 (UUID: ...FF52)<br/>Descriptor 0x2901: 'prov-config'"]
-        Char3["Characteristic 3 (UUID: ...FF53)<br/>Descriptor 0x2901: 'prov-scan'"]
-        Char4["Characteristic 4 (UUID: ...FF54)<br/>Descriptor 0x2901: 'proto-ver'"]
-        Char5["Characteristic 5 (UUID: ...FF55)<br/>Descriptor 0x2901: 'custom-data'"]
-        
-        Service --> Char1 & Char2 & Char3 & Char4 & Char5
-    end
-```
+<p align="center"><img src="Fig_08-Labsheet-07-3-BLE-Provisioning-and-GATT-Forensics_2026-10-25T10-46-51_academic.svg" alt="08-Labsheet-07-3-BLE-Provisioning-and-GATT-Forensics"  style="width: 100%; height: auto;" ></p>
+<p align="center"><b></b>สถาปัตยกรรม GATT Services &amp; Endpoints บน BLE Scheme</p>
 
 ---
 

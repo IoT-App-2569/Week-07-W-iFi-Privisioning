@@ -9,13 +9,8 @@
 
 กระบวนการส่งมอบข้อมูลคอนฟิกเครือข่ายไร้สายจากอุปกรณ์ตัวกลาง (Provisioning Client เช่น Smartphone หรือ PC) ไปยังอุปกรณ์ IoT (Provisioning Target หรือ Node) เรียกว่า **Wi-Fi Provisioning**
 
-```mermaid
-flowchart TB
-    A["📱 Smartphone<br/>(Provisioner Client)"] -- "1. ส่ง SSID + Password + Keys<br/>(ผ่าน BLE หรือ SoftAP)" --> B["⚡ ESP32 Node<br/>(Provisioning Target)"]
-    B -- "2. บันทึกค่าลง NVS Flash" --> C[("💾 Flash (NVS)")]
-    B -- "3. เชื่อมต่อ Wi-Fi Station" --> D["📡 Wi-Fi Router (AP)"]
-    D -- "4. ต่ออินเทอร์เน็ตสำเร็จ" --> E["☁️ Cloud Platform"]
-```
+<p align="center"><img src="Fig_01-WiFi-Provisioning-Architecture-and-Protocomm_2026-10-25T10-40-25_academic.svg" alt="01-WiFi-Provisioning-Architecture-and-Protocomm" width="600" style="max-width: 800px;height: auto;" ></p>
+<p align="center"><b></b> ปัญหาของอุปกรณ์ IoT Headless (The Headless IoT Problem)</p>
 
 ---
 
@@ -23,36 +18,8 @@ flowchart TB
 
 ESP-IDF ออกแบบโมดูล Wi-Fi Provisioning ให้เป็นแบบ **Modular & Layered Architecture** แบ่งการทำงานออกเป็น 3 เลเยอร์หลัก:
 
-```mermaid
-graph TD
-    subgraph App_Layer["Application Layer"]
-        A1["app_main()"]
-        A2["Custom Data Handler (Endpoints)"]
-        A3["Event Handler (WIFI_PROV_EVENT)"]
-    end
-
-    subgraph Prov_Mgr["Wi-Fi Provisioning Manager (wifi_prov_mgr)"]
-        B1["State Machine Engine"]
-        B2["Security Engine (Protocomm Security)"]
-        B3["Protobuf Serialization (Nanopb)"]
-    end
-
-    subgraph Transport_Layer["Protocomm Transport Layer"]
-        C1["Scheme SoftAP (HTTP Server / Webserver)"]
-        C2["Scheme BLE (GATT Services & Characteristics)"]
-        C3["Scheme Console (UART / Serial)"]
-    end
-
-    subgraph Storage_HW["Storage & Hardware Layer"]
-        D1["NVS Flash Storage (0x9000)"]
-        D2["Wi-Fi Driver (WIFI_IF_STA / WIFI_IF_AP)"]
-        D3["Bluetooth Driver (BT/BLE Controller)"]
-    end
-
-    App_Layer --> Prov_Mgr
-    Prov_Mgr --> Transport_Layer
-    Transport_Layer --> Storage_HW
-```
+<p align="center"><img src="Fig_01-WiFi-Provisioning-Architecture-and-Protocomm_2026-10-25T10-41-23_academic.svg" alt="01-WiFi-Provisioning-Architecture-and-Protocomm" width="400" style="max-width: 400px; width: 100%; height: auto;" ></p>
+<p align="center"><b></b> สถาปัตยกรรม Provisioning Subsystem ใน ESP-IDF</p>
 
 ### องค์ประกอบสำคัญ:
 1. **`wifi_prov_mgr` (Provisioning Manager)** ควบคุม State Machine ตั้งแต่เริ่มต้น จนกระทั่งเชื่อมต่อ Wi-Fi สำเร็จ และทำการคืนหน่วยความจำ (De-initialization)
@@ -82,28 +49,8 @@ graph TD
 
 ESP-IDF จัดการสถานะของ Provisioning ผ่าน State Machine ภายใน โดยส่งสัญญาณ Event แจ้งเตือนไปยัง Application ผ่าน Default Event Loop
 
-```mermaid
-stateDiagram-v2
-    [*] --> Check_Provisioned: บูตเครื่อง (app_main)
-    Check_Provisioned --> Already_Provisioned: wifi_prov_mgr_is_provisioned() == true
-    Check_Provisioned --> Start_Provisioning: wifi_prov_mgr_is_provisioned() == false
-
-    Already_Provisioned --> Start_STA: wifi_init_sta()
-    Start_STA --> Connect_AP: esp_wifi_connect()
-    Connect_AP --> Got_IP: IP_EVENT_STA_GOT_IP
-
-    Start_Provisioning --> Provisioning_Active: WIFI_PROV_START (เปิด BLE หรือ SoftAP)
-    Provisioning_Active --> Session_Established: แลกเปลี่ยนคีย์สำเร็จ (Security Handshake)
-    Session_Established --> Credential_Received: WIFI_PROV_CRED_RECV (รับ SSID/Pass)
-    Credential_Received --> Test_Connecting: ทดลองต่อ Wi-Fi AP
-    Test_Connecting --> Provisioning_Success: WIFI_PROV_CRED_SUCCESS (ต่อสำเร็จ ได้ IP)
-    Test_Connecting --> Provisioning_Fail: WIFI_PROV_CRED_FAIL (รหัสผิด หรือ ไม่พบ AP)
-    
-    Provisioning_Fail --> Provisioning_Active: Retry ตามจำนวนรอบที่ตั้งไว้
-    Provisioning_Success --> Deinit_Manager: WIFI_PROV_END (ปล่อยหน่วยความจำ BLE/AP)
-    Deinit_Manager --> Got_IP: ทำงานในโหมด Station ต่อเนื่อง
-    Got_IP --> [*]
-```
+<p align="center"><img src="Fig_01-WiFi-Provisioning-Architecture-and-Protocomm_2026-10-25T10-42-03_academic.svg" alt="01-WiFi-Provisioning-Architecture-and-Protocomm" width="800" style="max-width: 800px; width: 100%; height: auto;" ></p>
+<p align="center"><b></b>วงจรชีวิตของ Provisioning State Machine</p>
 
 ### Event สำคัญที่ Application ต้องให้ความสำคัญ
 
