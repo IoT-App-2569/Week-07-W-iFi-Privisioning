@@ -134,9 +134,9 @@ wifi_prov_mgr_endpoint_register("custom-data", custom_prov_data_handler, NULL);
 
 | สถานการณ์ทดสอบ | ค่า PoP ที่ป้อน | ผลลัพธ์บนแอปมือถือ | ข้อความ Log ใน Serial Monitor |
 | :--- | :--- | :--- | :--- |
-| **1. ป้อน PoP ผิดพลาด** | `wrong1234` | | |
-| **2. ป้อน PoP ถูกต้อง** | `abcd1234` | | |
-| **3. ส่ง Custom Data** | `TEST_DATA_999` | | |
+| **1. ป้อน PoP ผิดพลาด** | `wrong1234` |ไม่สามารถสร้าง Secure Session ได้ ระบบปฏิเสธการเชื่อมต่อ |Received incorrect username and/or PoP for establishing secure session! |
+| **2. ป้อน PoP ถูกต้อง** | `abcd1234` | สร้าง Secure Session สำเร็จ และสามารถดำเนินการ Provisioning ต่อได้|Secured session established! |
+| **3. ส่ง Custom Data** | `TEST_DATA_999` |ส่งข้อมูลไปยัง ESP32 และได้รับข้อความตอบกลับ ACK_FROM_ESP32 หากแอปรองรับการส่ง Custom Data | Received custom data: TEST_DATA_999|
 
 ---
 
