@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "07-Labsheet-07-2-SoftAP-Provisioning-and-HTTP-Sniffing.md",
+                "file": "08-Labsheet-07-3-BLE-Provisioning-and-GATT-Forensics.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "07-Labsheet-07-2-SoftAP-Provisioning-and-HTTP-Sniffing"
+              "title": "08-Labsheet-07-3-BLE-Provisioning-and-GATT-Forensics"
             }
           }
         ]
@@ -99,7 +99,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "07-Labsheet-07-2-SoftAP-Provisioning-and-HTTP-Sniffing.md",
+                "file": "08-Labsheet-07-3-BLE-Provisioning-and-GATT-Forensics.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -118,7 +118,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "07-Labsheet-07-2-SoftAP-Provisioning-and-HTTP-Sniffing.md",
+                "file": "08-Labsheet-07-3-BLE-Provisioning-and-GATT-Forensics.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
@@ -161,7 +161,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "07-Labsheet-07-2-SoftAP-Provisioning-and-HTTP-Sniffing.md",
+                "file": "08-Labsheet-07-3-BLE-Provisioning-and-GATT-Forensics.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
@@ -201,6 +201,7 @@
   },
   "active": "28c3f661f90fde2b",
   "lastOpenFiles": [
+    "07-Labsheet-07-2-SoftAP-Provisioning-and-HTTP-Sniffing.md",
     "06-Labsheet-07-1-Reset-Mechanisms-and-NVS-Forensics.md",
     "05-Glossary.md",
     "Fig_07-Labsheet-07-2-SoftAP-Provisioning-and-HTTP-Sniffing_2026-10-25T10-45-51_academic.svg",
