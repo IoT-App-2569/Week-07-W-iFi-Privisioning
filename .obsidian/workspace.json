@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "08-Labsheet-07-3-BLE-Provisioning-and-GATT-Forensics.md",
+                "file": "09-Labsheet-07-4-Security-Schemes-and-Custom-Data.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "08-Labsheet-07-3-BLE-Provisioning-and-GATT-Forensics"
+              "title": "09-Labsheet-07-4-Security-Schemes-and-Custom-Data"
             }
           }
         ]
@@ -99,7 +99,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "08-Labsheet-07-3-BLE-Provisioning-and-GATT-Forensics.md",
+                "file": "09-Labsheet-07-4-Security-Schemes-and-Custom-Data.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -118,7 +118,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "08-Labsheet-07-3-BLE-Provisioning-and-GATT-Forensics.md",
+                "file": "09-Labsheet-07-4-Security-Schemes-and-Custom-Data.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
@@ -161,7 +161,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "08-Labsheet-07-3-BLE-Provisioning-and-GATT-Forensics.md",
+                "file": "09-Labsheet-07-4-Security-Schemes-and-Custom-Data.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
@@ -201,6 +201,7 @@
   },
   "active": "28c3f661f90fde2b",
   "lastOpenFiles": [
+    "08-Labsheet-07-3-BLE-Provisioning-and-GATT-Forensics.md",
     "07-Labsheet-07-2-SoftAP-Provisioning-and-HTTP-Sniffing.md",
     "06-Labsheet-07-1-Reset-Mechanisms-and-NVS-Forensics.md",
     "05-Glossary.md",
