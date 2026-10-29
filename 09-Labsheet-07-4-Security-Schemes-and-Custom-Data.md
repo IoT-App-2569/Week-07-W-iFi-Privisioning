@@ -149,9 +149,13 @@ wifi_prov_mgr_endpoint_register("custom-data", custom_prov_data_handler, NULL);
 3. การจัดสรรหน่วยความจำแบบไดนามิกด้วย `strdup()` ให้กับ `*outbuf`
 4. ทำไมตัวแปร `*outbuf` จึงต้องจัดสรรใน Heap Memory (ทำไมจึงใช้ตัวแปร Local Static Array ธรรมดาไม่ได้)?
 
-```text
-[พื้นที่สำหรับแนบรูปภาพ Diagram ที่นักศึกษาเขียนขึ้นด้วย Draw.io / Mermaid / วาดมือ]
-```
+text
+ผังขั้นตอนการตรวจสอบ PoP (Security Handshake Decision Flow)
+![alt text](image-1.png)
+
+ผังการรับส่งข้อมูลผ่าน Custom Endpoint (Custom Data Handler Flow)
+![alt text](image-2.png)
+
 
 ---
 
@@ -159,9 +163,9 @@ wifi_prov_mgr_endpoint_register("custom-data", custom_prov_data_handler, NULL);
 
 | สถานการณ์ทดสอบ | ค่า PoP ที่ป้อน | ผลลัพธ์บนแอปมือถือ | ข้อความ Log ใน Serial Monitor |
 | :--- | :--- | :--- | :--- |
-| **1. ป้อน PoP ผิดพลาด** | `wrong1234` | | |
-| **2. ป้อน PoP ถูกต้อง** | `abcd1234` | | |
-| **3. ส่ง Custom Data** | `TEST_DATA_999` | | |
+| **1. ป้อน PoP ผิดพลาด** | `wrong1234` |ไม่สามารถยืนยันตัวตนเพื่อเชื่อมต่อกับอุปกรณ์ ESP32 ได้ เนื่องจากค่า PoP ไม่ถูกต้อง|คาดว่าจะพบ Log แจ้งข้อผิดพลาดด้านการยืนยันตัวตน (CREDENTIALS_MISMATCH)|
+| **2. ป้อน PoP ถูกต้อง** | `abcd1234` |ยืนยันตัวตนสำเร็จ และสามารถเริ่มกระบวนการ Provisioning ได้|I (1085) network_prov_mgr: Provisioning started with service name : PROV_38BBC0|
+| **3. ส่ง Custom Data** | `TEST_DATA_999` |แอปได้รับข้อความตอบกลับ ACK_FROM_ESP32 หาก Handler กำหนดให้ตอบกลับข้อความนี้|คาดว่าจะพบ Log Received custom data: TEST_DATA_999 และการส่งข้อมูลตอบกลับสำเร็จ|
 
 ---
 

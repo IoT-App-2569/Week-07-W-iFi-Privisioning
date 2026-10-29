@@ -121,7 +121,51 @@ I (19850) app: Connected with IP Address: 192.168.1.150
 - สถานะจังหวะการกระพริบของ **LED 3 (GPIO 5)** และ **LED 1 (GPIO 2)** ในแต่ละช่วง
 
 ```text
-[พื้นที่สำหรับแนบรูปภาพ Sequence Diagram ที่นักศึกษาเขียนขึ้นด้วย Draw.io / Mermaid / วาดมือ]
+
+sequenceDiagram
+    autonumber
+    actor APP as Smartphone App
+    participant ESP as ESP32 SoftAP Webserver
+    participant AP as Wi-Fi Router
+
+    Note over ESP: เริ่มต้น SoftAP + Protocomm<br/>LED3 GPIO5: สถานะเริ่มต้น<br/>LED1 GPIO2: สถานะเริ่มต้น
+
+    APP->>ESP: เชื่อมต่อ Wi-Fi SoftAP
+    ESP->>ESP: WIFI_EVENT_AP_STACONNECTED
+    Note right of ESP: LED3: เปลี่ยนสถานะตาม event_handler()
+
+    rect rgb(235, 243, 255)
+        Note over APP,ESP: ขั้นที่ 1 — สร้าง Security Session
+        APP->>ESP: HTTP POST /prov-session
+        ESP->>ESP: ตรวจสอบและสร้าง Security Session
+        ESP->>ESP: PROTOCOMM_SECURITY_SESSION_SETUP_OK
+        ESP-->>APP: Session Response
+    end
+
+    rect rgb(235, 250, 240)
+        Note over APP,ESP: ขั้นที่ 2 — สแกน Wi-Fi
+        APP->>ESP: HTTP POST /prov-scan
+        ESP->>ESP: สแกนเครือข่าย Wi-Fi
+        ESP-->>APP: รายชื่อ SSID ที่ค้นพบ
+        Note right of ESP: LED แสดงสถานะตามโค้ดจริง
+    end
+
+    rect rgb(255, 246, 229)
+        Note over APP,AP: ขั้นที่ 3 — ส่งข้อมูลและเชื่อมต่อ Router
+        APP->>ESP: HTTP POST /prov-config<br/>SSID + Password
+        ESP->>ESP: WIFI_PROV_CRED_RECV
+        Note right of ESP: LED แสดงสถานะกำลัง Provisioning
+
+        ESP->>AP: เชื่อมต่อ Wi-Fi ด้วย Credentials
+        AP-->>ESP: ยอมรับการเชื่อมต่อ
+        AP-->>ESP: DHCP Assign IP Address
+
+        ESP->>ESP: IP_EVENT_STA_GOT_IP
+        ESP->>ESP: WIFI_PROV_CRED_SUCCESS
+        Note right of ESP: LED1 GPIO2 และ LED3 GPIO5<br/>เปลี่ยนเป็นสถานะสำเร็จตามโค้ด
+        ESP-->>APP: แจ้งผล Provisioning สำเร็จ
+    end
+
 ```
 
 ---
@@ -130,17 +174,23 @@ I (19850) app: Connected with IP Address: 192.168.1.150
 
 | รายการตรวจสอบ | ค่าที่บันทึกได้จากการทดลอง |
 | :--- | :--- |
-| **1. ชื่อ SoftAP SSID ของ ESP32** | `PROV_`.............................. |
-| **2. รหัส PoP (Proof of Possession)** | ..................................................... |
-| **3. ข้อความใน QR Code Payload (JSON)** | ..................................................... |
-| **4. พฤติกรรมไฟ LED 3 (GPIO 5) ช่วงรอ vs ช่วงส่งข้อมูล** | ช่วงรอ: .......................................<br/>ช่วงส่ง: ....................................... |
-| **5. IP Address ที่ ESP32 ได้รับจาก Router** | ..................................................... |
-| **6. เวลาที่ใช้ตั้งแต่เริ่มจนจบกระบวนการ (วินาที)** | ..................................................... |
+| **1. ชื่อ SoftAP SSID ของ ESP32** | PROV_38BBC0 |
+| **2. รหัส PoP (Proof of Possession)** | abcd1234 |
+| **3. ข้อความใน QR Code Payload (JSON)** | {"ver":"v1","name":"PROV_38BBC0","pop":"abcd1234","transport":"softap"} |
+| **4. พฤติกรรมไฟ LED 3 (GPIO 5) ช่วงรอ vs ช่วงส่งข้อมูล** | ช่วงรอ: กระพริบเร็ว (เปิด 200 ms / ปิด 200 ms) 
+ ช่วงส่ง: กระพริบช้า (เปิด 200 ms / ปิด 800 ms)|
+| **5. IP Address ที่ ESP32 ได้รับจาก Router** | Router	192.168.1.152 |
+| **6. เวลาที่ใช้ตั้งแต่เริ่มจนจบกระบวนการ (วินาที)** | 32s |
 
 ---
 
 ## 7. คำถามท้ายการทดลอง (Post-Lab Questions)
 1. ในโหมด SoftAP Scheme สมาร์ตโฟนส่งข้อมูลหา ESP32 ผ่านโปรโตคอลและ IP Address ใด?
+-- สมาร์ตโฟนสื่อสารกับ ESP32 ผ่านโปรโตคอล HTTP โดยเชื่อมต่อไปยัง IP Address 192.168.4.1 ซึ่งเป็น IP เริ่มต้นของ ESP32 ในโหมด SoftAP
+
 2. หากผู้ใช้ป้อนรหัสผ่าน Wi-Fi ผิดในแอปมือถือ จะเกิด Event ใดขึ้นบน ESP32 (`WIFI_PROV_CRED_FAIL` หรือไม่) และ ESP32 มีพฤติกรรมอย่างไร?
+-- ESP32 จะเกิด Event WIFI_PROV_CRED_FAIL เมื่อเชื่อมต่อ Wi-Fi ไม่สำเร็จ โดยระบบอาจแจ้งข้อผิดพลาดผ่านไฟ LED และให้ผู้ใช้ส่งข้อมูลใหม่ได้ ทั้งนี้ขึ้นอยู่กับการเขียนโปรแกรม หากตั้งค่าให้ลองใหม่ได้ ESP32 จะพยายามเชื่อมต่ออีกครั้งหลังได้รับข้อมูลที่ถูกต้อง
+
 3. ทำไมผู้ผลิต IoT ส่วนใหญ่จึงมองว่ากระบวนการเชื่อมต่อแบบ SoftAP มีขั้นตอนที่ยุ่งยากสำหรับผู้ใช้ทั่วไปเมื่อเทียบกับ BLE?
+-- เพราะ SoftAP ต้องให้ผู้ใช้เปลี่ยนการเชื่อมต่อ Wi-Fi ของสมาร์ตโฟนไปยังเครือข่ายของอุปกรณ์ก่อน แล้วจึงกลับเข้าแอปเพื่อเลือกเครือข่ายและกรอกรหัสผ่าน ขณะที่ BLE สามารถส่งข้อมูลตั้งค่าผ่านแอปได้โดยตรง จึงสะดวกและมีขั้นตอนน้อยกว่า
 
