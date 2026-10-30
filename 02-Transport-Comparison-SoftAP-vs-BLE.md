@@ -27,8 +27,27 @@
 
 ในโหมด SoftAP, ESP32 จะเปิด **Embedded HTTP Webserver** ขึ้นมา และแมป Protocomm Endpoints เป็น HTTP URIs ภายใต้ IP เริ่มต้น `192.168.4.1`
 
-<p align="center"><img src="Fig_02-Transport-Comparison-SoftAP-vs-BLE_2026-10-25T10-43-12_academic.svg" alt="02-Transport-Comparison-SoftAP-vs-BLE" width="800" style="max-width: 800px; width: 100%; height: auto;" ></p>
-<p align="center"><b></b>กลไก SoftAP Transport Scheme</p>
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Phone as 📱 Smartphone (App)
+    participant AP as ⚡ ESP32 SoftAP Webserver
+    participant Proto as ⚙️ Protocomm Layer
+
+    Note over AP: เริ่มต้น SoftAP SSID: PROV_XXXXXX<br/>IP: 192.168.4.1, Port 80
+    Phone->>AP: เชื่อมต่อ Wi-Fi SSID: PROV_XXXXXX
+    AP-->>Phone: DHCP Server แจก IP (192.168.4.2)
+    
+    Phone->>AP: HTTP POST /prov-session (Security Handshake)
+    AP->>Proto: ส่งข้อมูลเข้า Session Handler
+    Proto-->>AP: Response Data
+    AP-->>Phone: HTTP 200 OK (Session Established)
+
+    Phone->>AP: HTTP POST /prov-config (ส่ง SSID + Password)
+    AP->>Proto: ส่งข้อมูลเข้า Config Handler
+    Proto-->>AP: Status: Success
+    AP-->>Phone: HTTP 200 OK (Config Applied)
+```
 
 ### ลักษณะของ HTTP Request ในเชิง Forensic
 - **HTTP Method** `POST`
@@ -41,8 +60,25 @@
 
 ในโหมด BLE, ESP32 จะทำงานเป็น **BLE Peripheral** และประกาศตัวผ่าน **Advertising Packets** โดยเปิด Generic Attribute Profile Service (GATT) พิเศษขึ้นมา ดังแผนผังต่อไปนี้
 
-<p align="center"><img src="Fig_02-Transport-Comparison-SoftAP-vs-BLE_2026-10-25T10-43-27_academic.svg" alt="02-Transport-Comparison-SoftAP-vs-BLE" width="800" style="max-width: 800px; width: 100%; height: auto;" ></p>
-<p align="center"><b></b>กลไก BLE Transport Scheme</p>
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Phone as 📱 Smartphone (App / nRF Connect)
+    participant BLE as ⚡ ESP32 BLE Stack (NimBLE/Bluedroid)
+    participant Proto as ⚙️ Protocomm Layer
+
+    Note over BLE: Broadcast BLE Advertisement (Name: PROV_XXXXXX)<br/>Service UUID: 021a9004-0382-4aea-bff4-6b3f1c5adfb4
+    Phone->>BLE: Scan & Connect BLE Peripheral
+    Phone->>BLE: Discover GATT Services & Characteristics
+    
+    Phone->>BLE: GATT Write to Characteristic (prov-session)
+    BLE->>Proto: ส่งเข้า Handler
+    Proto-->>BLE: Response Data
+    BLE-->>Phone: GATT Notification / Read Response
+
+    Phone->>BLE: GATT Write to Characteristic (prov-config)
+    BLE-->>Phone: GATT Write Response
+```
 
 ### โครงสร้าง GATT Service & Characteristic UUIDs
 ESP-IDF ใช้ Base UUID 128-bit ที่ปรับแต่งได้ โดยกำหนดให้ Characteristic แต่ละตัวตรงกับ Endpoint ของ Protocomm

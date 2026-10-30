@@ -11,8 +11,18 @@
 
 ## 2. แผนผังเนื้อหาการเรียนรู้ประจำสัปดาห์ (Lesson Roadmap)
 
-<p align="center"><img src="Fig_Readme_2026-10-27T09-26-38_academic.svg" alt="Readme" width="800" ></p>
-<p align="center"> แผนผังเนื้อหาการเรียนรู้ประจำสัปดาห์ (Lesson Roadmap)</p>
+```mermaid
+flowchart LR
+    A["Week 07: Wi-Fi Provisioning"] --> B["1. สถาปัตยกรรม & Protocomm<br/>(Architecture & State Machine)"]
+    A --> C["2. ช่องทางการสื่อสาร<br/>(SoftAP vs BLE Transport)"]
+    A --> D["3. ความปลอดภัยเชิงรหัสวิทยา<br/>(Sec0 / Sec1 PoP / Sec2 SRP6a)"]
+    A --> E["4. นิติวิทยาศาสตร์หน่วยความจำ<br/>(NVS Flash & Forensic Analysis)"]
+
+    B --> F["06-Labsheet-07-1<br/>3 รูปแบบการ Reset & NVS Inspection"]
+    C --> G["07-Labsheet-07-2<br/>SoftAP Scheme & Endpoint Analysis"]
+    C --> H["08-Labsheet-07-3<br/>BLE Scheme & GATT Services Analysis"]
+    D --> I["09-Labsheet-07-4<br/>Security Schemes & Custom Data Endpoint"]
+```
 
 ---
 
@@ -67,16 +77,9 @@
   * **Playstore**
 	  * **[ESP BLE Provisioning](https://play.google.com/store/apps/details?id=com.espressif.provble&pli=1)** (โดย Espressif) - สำหรับทำ Provisioning ผ่าน BLE   
 	  * **[ESP SoftAP Provisioning](https://play.google.com/store/apps/details?id=com.espressif.provsoftap)** (โดย Espressif) - สำหรับทำ Provisioning ผ่าน SoftAP
-     
-	**Github repo** [esp-idf-provisioning-android](https://github.com/espressif/esp-idf-provisioning-android  ) 
-
 * **Appstore**
 	- **[ESP BLE Provisioning](https://apps.apple.com/in/app/esp-ble-provisioning/id1473590141)**  (โดย Espressif) - สำหรับทำ Provisioning ผ่าน BLE   
 	- **[ESP SoftAP Provisioning](https://apps.apple.com/in/app/esp-softap-provisioning/id1474040630)** (โดย Espressif) - สำหรับทำ Provisioning ผ่าน SoftAP
-	
-	**Github repo**  [esp-idf-provisioning-ios](https://github.com/espressif/esp-idf-provisioning-ios)
-
-
  * **nRF Connect for Mobile** (โดย Nordic Semiconductor) - สำหรับสแกนและตรวจสอบ BLE GATT Services & Characteristics
 
 
