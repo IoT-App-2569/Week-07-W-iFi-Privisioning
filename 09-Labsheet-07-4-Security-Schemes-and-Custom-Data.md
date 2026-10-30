@@ -24,8 +24,33 @@
 
 ## 3. สถาปัตยกรรม Custom Endpoint & PoP Security Handshake
 
-<p align="center"><img src="Fig_09-Labsheet-07-4-Security-Schemes-and-Custom-Data_2026-10-25T10-47-16_academic.svg" alt="09-Labsheet-07-4-Security-Schemes-and-Custom-Data"   style="width: 100%; height: auto;" ></p>
-<p align="center"><b></b>สถาปัตยกรรม Custom Endpoint &amp; PoP Security Handshake</p>
+```mermaid
+sequenceDiagram
+    autonumber
+    participant App as 📱 Mobile App (Provisioner)
+    participant Sec as 🔒 Protocomm Security 1
+    participant Cust as 📦 Custom Data Handler
+    participant ESP as ⚡ Application (main)
+
+    rect rgb(240, 248, 255)
+    note over App,Sec: 1. ทดสอบการใส่ PoP ถูกต้อง vs ผิด
+    App->>Sec: ส่ง Key Exchange + PoP
+    alt กรณี PoP ผิด (เช่น "wrongpass")
+        Sec-->>App: ปฏิเสธ Handshake (Session Failed!)
+        Sec->>ESP: Post Event: PROTOCOMM_SECURITY_SESSION_CREDENTIALS_MISMATCH
+    else กรณี PoP ถูกต้อง ("abcd1234")
+        Sec-->>App: แลกเปลี่ยนคีย์สำเร็จ (Session Established)
+        Sec->>ESP: Post Event: PROTOCOMM_SECURITY_SESSION_SETUP_OK
+    end
+    end
+
+    rect rgb(255, 250, 240)
+    note over App,Cust: 2. การรับส่งข้อมูล Custom Endpoint
+    App->>Cust: ส่งข้อความ Payload ไปยัง Endpoint: "custom-data"<br/>เช่น "USER_ID:65010099"
+    Cust->>ESP: พิมพ์ Log: "Received data: USER_ID:65010099"
+    Cust-->>App: ตอบกลับข้อความ: "SUCCESS"
+    end
+```
 
 ---
 
