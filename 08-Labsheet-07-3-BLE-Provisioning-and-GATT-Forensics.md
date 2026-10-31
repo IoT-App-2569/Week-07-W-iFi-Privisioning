@@ -57,7 +57,7 @@
 ### ขั้นตอนที่ 3: ส่องโครงสร้าง GATT ผ่านแอป nRF Connect (BLE Forensic)
 1. เปิดแอป **nRF Connect for Mobile** บนสมาร์ตโฟน
 2. แตะปุ่ม **Scan** เพื่อค้นหาอุปกรณ์บลูทูธรอบตัว
-3. ค้นหาชื่ออุปกรณ์ที่ขึ้นต้นด้วย `PROV_XXXXXX` (ตรงกับที่ระบุใน Serial Monitor)
+3. ค้นหาชื่ออุปกรณ์ที่ขึ้นต้นด้วย `PROV_0154A1` (ตรงกับที่ระบุใน Serial Monitor)
 4. สังเกตค่า RSSI และแตะปุ่ม **CONNECT** เพื่อเชื่อมต่อ
 5. เมื่อเชื่อมต่อสำเร็จ สำรวจดู **GATT Services**:
    - มองหา **Unknown Service** ที่มี Base UUID `021a9004-0382-4aea-bff4-6b3f1c5adfb4`
@@ -71,7 +71,7 @@
 ### ขั้นตอนที่ 4: ทำการ Provisioning ด้วยแอป ESP BLE Provisioning
 1. เปิดแอป **ESP BLE Provisioning**
 2. เลือก "Provision New Device" $\rightarrow$ เลือก "BLE"
-3. แตะชื่อบอร์ด `PROV_XXXXXX` (หรือสแกน QR Code)
+3. แตะชื่อบอร์ด `PROV_0154A1` (หรือสแกน QR Code)
 4. ป้อน PoP เป็น `abcd1234`
 5. เลือกเครือข่าย Wi-Fi ในห้องเรียน และป้อนรหัสผ่าน Wi-Fi
 6. กด **Provision** และรอจนกระทั่งเชื่อมต่อสำเร็จ
@@ -84,7 +84,7 @@
 I (24560) app: Provisioning successful
 I (24570) wifi_prov_scheme_ble: BT memory released
 I (24580) wifi_prov_scheme_ble: BTDM memory released
-I (26120) app: Connected with IP Address: 192.168.1.155
+I (26120) app: Connected with IP Address: 192.168.1.173
 ```
 > **ข้อสังเกต:** บอร์ดจะทำการล้างและคืนหน่วยความจำของ Bluetooth Stack ทั้งหมดคืนสู่ระบบ DRAM ทันที ทำให้ประหยัด RAM ได้มหาศาล!
 
@@ -118,11 +118,11 @@ I (26120) app: Connected with IP Address: 192.168.1.155
 
 | รายการตรวจสอบ | ผลการทดลอง / ข้อมูลที่สังเกตได้ |
 | :--- | :--- |
-| **1. BLE Device Name ที่สแกนเจอ** | `PROV_`.............................. |
-| **2. Primary Service UUID (128-bit)** | ..................................................... |
-| **3. Characteristic Endpoint ที่พบ (0x2901)** | 1. ..................................................<br/>2. ..................................................<br/>3. .................................................. |
-| **4. พฤติกรรมไฟ LED 2 (GPIO 4) ช่วงรอ vs ช่วงต่อ BLE** | ช่วงรอ: .......................................<br/>ช่วงต่อ: ....................................... |
-| **5. พฤติกรรมเมื่อต่อ Wi-Fi สำเร็จ** | มี Log คืนหน่วยความจำ Bluetooth หรือไม่? (มี / ไม่มี) |
+| **1. BLE Device Name ที่สแกนเจอ** | `PROV_0154A1` |
+| **2. Primary Service UUID (128-bit)** | `021A9004-0382-4AEA-BFF4-6B3F1C5ADFB4` |
+| **3. Characteristic Endpoint ที่พบ (0x2901)** | 1. `021AFF50-0382-4AEA-BFF4-6B3F1C5ADFB4` (prov-session)<br/>2. `021AFF51-0382-4AEA-BFF4-6B3F1C5ADFB4` (prov-config)<br/>3. `021AFF52-0382-4AEA-BFF4-6B3F1C5ADFB4` (prov-scan) |
+| **4. พฤติกรรมไฟ LED 2 (GPIO 4) ช่วงรอ vs ช่วงต่อ BLE** | ช่วงรอ: สว่างค้างขณะ Advertising<br/>ช่วงต่อ: ดับเมื่อ Provisioning สำเร็จ |
+| **5. พฤติกรรมเมื่อต่อ Wi-Fi สำเร็จ** | มี: `BTDM memory released: 26488 bytes` |
 
 ---
 

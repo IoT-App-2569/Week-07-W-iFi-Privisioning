@@ -44,11 +44,11 @@
    ```
 2. สังเกต Log ใน Serial Monitor จะปรากฏข้อความและ QR Code:
    ```text
-   I (776) wifi_prov_scheme_softap: Starting SoftAP with SSID: PROV_XXXXXX
+   I (776) wifi_prov_scheme_softap: Starting SoftAP with SSID: PROV_0154A1
    I (786) app: Scan this QR code from the provisioning application for Provisioning.
    ... [รูป QR Code แบบ ASCII Text] ...
    I (816) app: If QR code is not visible, copy paste the below URL in a browser.
-   https://espressif.github.io/esp-jumpstart/qrcode.html?data={"ver":"v1","name":"PROV_XXXXXX","pop":"abcd1234","transport":"softap"}
+   https://espressif.github.io/esp-jumpstart/qrcode.html?data={"ver":"v1","name":"PROV_0154A1","pop":"abcd1234","transport":"softap"}
    ```
 
 ---
@@ -57,7 +57,7 @@
 1. เปิดแอป **ESP SoftAP Provisioning** บนสมาร์ตโฟน
 2. **วิธีที่ A (สแกน QR Code)** แตะปุ่ม "Scan QR Code" แล้วสแกนภาพ QR Code บนหน้าจอ Serial Monitor (หรือเปิดผ่าน URL ที่ได้จาก Log)
 3. **วิธีที่ B (เชื่อมต่อ Manual)**
-   - ไปที่การตั้งค่า Wi-Fi บนมือถือ เชื่อมต่อ Wi-Fi ชื่อ `PROV_XXXXXX`
+   - ไปที่การตั้งค่า Wi-Fi บนมือถือ เชื่อมต่อ Wi-Fi ชื่อ `PROV_0154A1`
    - เปิดแอป กด "Provision" และป้อน PoP เป็น `abcd1234`
 4. เมื่อแอปค้นหา ESP32 พบ ให้เลือกชื่อ Wi-Fi ภายในห้องเรียนหรือ Hotspot ที่ต้องการเชื่อมต่อ และป้อนรหัสผ่าน Wi-Fi
 5. กดปุ่ม **Provision** และสังเกตแถบสถานะบนแอปจนกระทั่งขึ้น **"Provisioning Successful!"**
@@ -74,7 +74,7 @@ I (16440) app: Received Wi-Fi credentials
 	Password : Password999
 I (18210) app: Provisioning successful
 I (18220) wifi:mode : sta (...)
-I (19850) app: Connected with IP Address: 192.168.1.150
+I (19850) app: Connected with IP Address: 192.168.1.173
 ```
 
 ---
@@ -111,12 +111,12 @@ I (19850) app: Connected with IP Address: 192.168.1.150
 
 | รายการตรวจสอบ | ค่าที่บันทึกได้จากการทดลอง |
 | :--- | :--- |
-| **1. ชื่อ SoftAP SSID ของ ESP32** | `PROV_`.............................. |
-| **2. รหัส PoP (Proof of Possession)** | ..................................................... |
-| **3. ข้อความใน QR Code Payload (JSON)** | ..................................................... |
-| **4. พฤติกรรมไฟ LED 3 (GPIO 5) ช่วงรอ vs ช่วงส่งข้อมูล** | ช่วงรอ: .......................................<br/>ช่วงส่ง: ....................................... |
-| **5. IP Address ที่ ESP32 ได้รับจาก Router** | ..................................................... |
-| **6. เวลาที่ใช้ตั้งแต่เริ่มจนจบกระบวนการ (วินาที)** | ..................................................... |
+| **1. ชื่อ SoftAP SSID ของ ESP32** | `PROV_0154A1` |
+| **2. รหัส PoP (Proof of Possession)** | `abcd1234` |
+| **3. ข้อความใน QR Code Payload (JSON)** | `{"ver":"v1","name":"PROV_0154A1","pop":"abcd1234","transport":"softap"}` |
+| **4. พฤติกรรมไฟ LED 3 (GPIO 5) ช่วงรอ vs ช่วงส่งข้อมูล** | ช่วงรอ: สว่างค้าง<br/>ช่วงส่ง: ดับหลังเชื่อมต่อ Wi-Fi สำเร็จ |
+| **5. IP Address ที่ ESP32 ได้รับจาก Router** | `192.168.1.173` |
+| **6. เวลาที่ใช้ตั้งแต่เริ่มจนจบกระบวนการ (วินาที)** | `7.2 วินาที` |
 
 ---
 

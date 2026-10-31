@@ -175,9 +175,9 @@ void app_main(void)
 
 | รูปแบบการ Reset                  | คำสั่ง / พฤติกรรมที่ทำ               | พฤติกรรมของ LED แต่ละดวงหลังเปิดเครื่อง | สถานะใน Serial Monitor |
 | :------------------------------- | :----------------------------------- | :-------------------------------------- | :--------------------- |
-| **1. CLI Erase**                 | `idf.py erase-flash`                 |                                         |                        |
-| **2. Menuconfig Flag**           | `CONFIG_EXAMPLE_RESET_PROVISIONED=y` |                                         |                        |
-| **3. Hardware Button (GPIO 18)** | กดปุ่ม GPIO 18 ค้าง 3 วินาที         |                                         |                        |
+| **1. CLI Erase**                 | `idf.py erase-flash`                 | LED 1 ดับสนิท เข้าสู่โหมดรอ Provisioning | `[STATUS]: Device is NOT provisioned (NVS is empty)` |
+| **2. Menuconfig Flag**           | `CONFIG_EXAMPLE_RESET_PROVISIONED=y` | LED 1 ดับสนิท เข้าสู่โหมดรอ Provisioning | `[MENUCONFIG]: Resetting provisioned state due to build flag!` |
+| **3. Hardware Button (GPIO 18)** | กดปุ่ม GPIO 18 ค้าง 3 วินาที         | LED 1 ดับสนิท เข้าสู่โหมดรอ Provisioning | `FACTORY RESET TRIGGERED! ERASING NVS FLASH` |
 
 ---
 
