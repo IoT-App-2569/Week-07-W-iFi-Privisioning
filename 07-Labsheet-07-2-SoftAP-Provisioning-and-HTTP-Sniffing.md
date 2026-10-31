@@ -24,8 +24,27 @@
 
 ## 3. สถาปัตยกรรมและแผนภาพลำดับเหตุการณ์ (Sequence Diagram)
 
-<p align="center"><img src="Fig_07-Labsheet-07-2-SoftAP-Provisioning-and-HTTP-Sniffing_2026-10-25T10-45-51_academic.svg" alt="07-Labsheet-07-2-SoftAP-Provisioning-and-HTTP-Sniffing" width="800" style="max-width: 800px; width: 100%; height: auto;" ></p>
-<p align="center"><b></b>สถาปัตยกรรมและแผนภาพลำดับเหตุการณ์ (Sequence Diagram)</p>
+```mermaid
+sequenceDiagram
+    autonumber
+    participant App as 📱 Mobile App (ESP SoftAP Prov)
+    participant ESP as ⚡ ESP32 (SoftAP Mode)
+    participant Router as 📡 Home/Lab Router AP
+
+    Note over ESP: เริ่มต้น SoftAP SSID: PROV_XXXXXX<br/>IP: 192.168.4.1
+    App->>ESP: เชื่อมต่อ Wi-Fi SSID: PROV_XXXXXX
+    App->>ESP: HTTP POST /prov-session (Security Handshake + PoP: abcd1234)
+    ESP-->>App: HTTP 200 OK (Secured Session Ready)
+    
+    App->>ESP: HTTP POST /prov-scan (สั่ง ESP32 สแกนหา Wi-Fi รอบตัว)
+    ESP-->>App: รายชื่อ Wi-Fi SSIDs + ค่า RSSI
+    
+    App->>ESP: HTTP POST /prov-config (ส่ง SSID เป้าหมาย + รหัสผ่าน)
+    ESP->>Router: ทดลองเชื่อมต่อไปยัง Router
+    Router-->>ESP: เชื่อมต่อสำเร็จ ได้รับ IP Address
+    ESP-->>App: HTTP 200 OK (Provisioning Success)
+    Note over ESP: ปิด SoftAP และเริ่มทำงานในโหมด Station ต่อเนื่อง
+```
 
 ---
 
@@ -101,8 +120,35 @@ I (19850) app: Connected with IP Address: 192.168.1.150
   - `IP_EVENT_STA_GOT_IP`
 - สถานะจังหวะการกระพริบของ **LED 3 (GPIO 5)** และ **LED 1 (GPIO 2)** ในแต่ละช่วง
 
-```text
-[พื้นที่สำหรับแนบรูปภาพ Sequence Diagram ที่นักศึกษาเขียนขึ้นด้วย Draw.io / Mermaid / วาดมือ]
+```mermaid
+sequenceDiagram
+    autonumber
+    participant App as 📱 Smartphone App
+    participant ESP as ⚡ ESP32 SoftAP Webserver
+    participant Router as 📡 Wi-Fi Router AP
+    participant LED as 💡 LED Status
+
+    Note over ESP,LED: LED 3 (GPIO 5) Slow Blink 500ms — รอการเชื่อมต่อ
+    App->>ESP: เชื่อมต่อ Wi-Fi SSID: PROV_XXXXXX
+    ESP->>LED: Event: WIFI_EVENT_AP_STACONNECTED<br/>LED 3 Fast Blink 100ms
+
+    App->>ESP: HTTP POST /prov-session<br/>(Key Exchange + PoP: abcd1234)
+    ESP-->>App: Session Token (Encrypted)
+    ESP->>LED: Event: PROTOCOMM_SECURITY_SESSION_SETUP_OK
+
+    App->>ESP: HTTP POST /prov-scan
+    ESP-->>App: รายการ Wi-Fi SSIDs + RSSI
+
+    App->>ESP: HTTP POST /prov-config<br/>(SSID + Password เข้ารหัสแล้ว)
+    ESP->>LED: Event: WIFI_PROV_CRED_RECV
+
+    ESP->>Router: esp_wifi_connect() — ทดลองเชื่อมต่อ
+    Router-->>ESP: Connected + DHCP IP
+    ESP->>LED: Event: WIFI_PROV_CRED_SUCCESS<br/>LED 3 OFF / LED 1 Heartbeat
+
+    ESP-->>App: Provisioning Success
+    ESP->>LED: Event: IP_EVENT_STA_GOT_IP<br/>LED 1 Heartbeat 200ms/800ms
+    Note over ESP: ปิด SoftAP → เข้าโหมด Station
 ```
 
 ---
@@ -124,4 +170,3 @@ I (19850) app: Connected with IP Address: 192.168.1.150
 1. ในโหมด SoftAP Scheme สมาร์ตโฟนส่งข้อมูลหา ESP32 ผ่านโปรโตคอลและ IP Address ใด?
 2. หากผู้ใช้ป้อนรหัสผ่าน Wi-Fi ผิดในแอปมือถือ จะเกิด Event ใดขึ้นบน ESP32 (`WIFI_PROV_CRED_FAIL` หรือไม่) และ ESP32 มีพฤติกรรมอย่างไร?
 3. ทำไมผู้ผลิต IoT ส่วนใหญ่จึงมองว่ากระบวนการเชื่อมต่อแบบ SoftAP มีขั้นตอนที่ยุ่งยากสำหรับผู้ใช้ทั่วไปเมื่อเทียบกับ BLE?
-

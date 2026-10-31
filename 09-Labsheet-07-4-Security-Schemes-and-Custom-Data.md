@@ -24,8 +24,33 @@
 
 ## 3. สถาปัตยกรรม Custom Endpoint & PoP Security Handshake
 
-<p align="center"><img src="Fig_09-Labsheet-07-4-Security-Schemes-and-Custom-Data_2026-10-25T10-47-16_academic.svg" alt="09-Labsheet-07-4-Security-Schemes-and-Custom-Data"   style="width: 100%; height: auto;" ></p>
-<p align="center"><b></b>สถาปัตยกรรม Custom Endpoint &amp; PoP Security Handshake</p>
+```mermaid
+sequenceDiagram
+    autonumber
+    participant App as 📱 Mobile App (Provisioner)
+    participant Sec as 🔒 Protocomm Security 1
+    participant Cust as 📦 Custom Data Handler
+    participant ESP as ⚡ Application (main)
+
+    rect rgb(240, 248, 255)
+    note over App,Sec: 1. ทดสอบการใส่ PoP ถูกต้อง vs ผิด
+    App->>Sec: ส่ง Key Exchange + PoP
+    alt กรณี PoP ผิด (เช่น "wrongpass")
+        Sec-->>App: ปฏิเสธ Handshake (Session Failed!)
+        Sec->>ESP: Post Event: PROTOCOMM_SECURITY_SESSION_CREDENTIALS_MISMATCH
+    else กรณี PoP ถูกต้อง ("abcd1234")
+        Sec-->>App: แลกเปลี่ยนคีย์สำเร็จ (Session Established)
+        Sec->>ESP: Post Event: PROTOCOMM_SECURITY_SESSION_SETUP_OK
+    end
+    end
+
+    rect rgb(255, 250, 240)
+    note over App,Cust: 2. การรับส่งข้อมูล Custom Endpoint
+    App->>Cust: ส่งข้อความ Payload ไปยัง Endpoint: "custom-data"<br/>เช่น "STUDENT_ID:67030172"
+    Cust->>ESP: พิมพ์ Log: "Received data: STUDENT_ID:67030172"
+    Cust-->>App: ตอบกลับข้อความ: "SUCCESS"
+    end
+```
 
 ---
 
@@ -95,10 +120,10 @@ wifi_prov_mgr_endpoint_register("custom-data", custom_prov_data_handler, NULL);
 
 ### ตอนที่ 2: การรับส่งข้อมูลผ่าน Custom Endpoint
 1. ในหน้าแอป **ESP BLE Provisioning** หลังผ่านขั้นตอนความปลอดภัยแล้ว ให้เข้าไปที่เมนู **Custom Data** หรือส่งข้อมูลผ่านแอปที่รองรับการเขียน Custom Endpoint
-2. ป้อนข้อความ เช่น `STUDENT_ID:65010099` และกดส่ง
+2. ป้อนข้อความ เช่น `STUDENT_ID:67030172` และกดส่ง
 3. สังเกต Serial Monitor จะปรากฏข้อความที่ได้รับจากสมาร์ตโฟน:
    ```text
-   I (22150) app: Received custom data: STUDENT_ID:65010099
+   I (22150) app: Received custom data: STUDENT_ID:67030172
    ```
 
 ---
@@ -124,8 +149,24 @@ wifi_prov_mgr_endpoint_register("custom-data", custom_prov_data_handler, NULL);
 3. การจัดสรรหน่วยความจำแบบไดนามิกด้วย `strdup()` ให้กับ `*outbuf`
 4. ทำไมตัวแปร `*outbuf` จึงต้องจัดสรรใน Heap Memory (ทำไมจึงใช้ตัวแปร Local Static Array ธรรมดาไม่ได้)?
 
-```text
-[พื้นที่สำหรับแนบรูปภาพ Diagram ที่นักศึกษาเขียนขึ้นด้วย Draw.io / Mermaid / วาดมือ]
+```mermaid
+flowchart TD
+    A(["📱 Mobile App ส่ง PoP มาที่ Protocomm Security 1"])
+    A --> B["ESP32 สร้าง sec_params\nด้วยค่า PoP: abcd1234"]
+    B --> C["Client ส่ง Public Key (X25519)\n+ Verification Hash มาให้ ESP32"]
+    C --> D{"PoP ตรงกันหรือไม่?"}
+
+    D -- "ไม่ตรง (Wrong PoP)" --> E["ปฏิเสธ Session\nTrigger Event:\nPROTOCOMM_SECURITY_SESSION\n_CREDENTIALS_MISMATCH"]
+    E --> F(["❌ Session Failed\nLog: Received incorrect PoP!"])
+
+    D -- "ตรง (abcd1234)" --> G["สร้าง Shared Secret\nด้วย ECDH X25519\nแล้วสร้าง AES-CTR Session Key"]
+    G --> H["Trigger Event:\nPROTOCOMM_SECURITY_SESSION_SETUP_OK"]
+    H --> I(["✅ Session Established\nLog: Secured session established!"])
+
+    I --> J["📦 ส่งข้อมูลผ่าน Custom Endpoint\ncustom-data: STUDENT_ID:67030172"]
+    J --> K["custom_prov_data_handler() รับ inbuf\nพิมพ์ Log ด้วย ESP_LOGI()"]
+    K --> L["จัดสรร Heap Memory\n*outbuf = strdup(ACK_FROM_ESP32)"]
+    L --> M(["📤 ตอบกลับ: ACK_FROM_ESP32\nProtocolcomm Layer Free outbuf อัตโนมัติ"])
 ```
 
 ---
@@ -145,4 +186,3 @@ wifi_prov_mgr_endpoint_register("custom-data", custom_prov_data_handler, NULL);
 2. หากไม่มีการใช้ PoP (เช่น ใน Security 0) ผู้โจมตีที่อยู่ในรัศมีสัญญาณบลูทูธสามารถทำสิ่งใดกับอุปกรณ์ได้บ้าง?
 3. ในการประยุกต์ใช้งานเชิงพาณิชย์จริง เราสามารถนำ **Custom Data Endpoint** ไปใช้ส่งข้อมูลประเภทใดได้อีกบ้าง (ยกตัวอย่าง 2 กรณี)?
 4. ในฟังก์ชัน `custom_prov_data_handler()` เหตุใดหน่วยความจำที่จัดสรรให้ `*outbuf` จึงถูก Free โดย Protocomm Layer อัตโนมัติหลังจากส่งข้อมูลเสร็จ?
-

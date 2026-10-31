@@ -26,8 +26,21 @@
 
 ## 3. สถาปัตยกรรม GATT Services & Endpoints บน BLE Scheme
 
-<p align="center"><img src="Fig_08-Labsheet-07-3-BLE-Provisioning-and-GATT-Forensics_2026-10-25T10-46-51_academic.svg" alt="08-Labsheet-07-3-BLE-Provisioning-and-GATT-Forensics"  style="width: 100%; height: auto;" ></p>
-<p align="center"><b></b>สถาปัตยกรรม GATT Services &amp; Endpoints บน BLE Scheme</p>
+```mermaid
+graph TD
+    subgraph BLE_Device["ESP32 BLE Device (Name: PROV_XXXXXX)"]
+        direction TB
+        Service["Primary Service UUID: 021a9004-0382-4aea-bff4-6b3f1c5adfb4"]
+        
+        Char1["Characteristic 1 (UUID: ...FF51)<br/>Descriptor 0x2901: 'prov-session'"]
+        Char2["Characteristic 2 (UUID: ...FF52)<br/>Descriptor 0x2901: 'prov-config'"]
+        Char3["Characteristic 3 (UUID: ...FF53)<br/>Descriptor 0x2901: 'prov-scan'"]
+        Char4["Characteristic 4 (UUID: ...FF54)<br/>Descriptor 0x2901: 'proto-ver'"]
+        Char5["Characteristic 5 (UUID: ...FF55)<br/>Descriptor 0x2901: 'custom-data'"]
+        
+        Service --> Char1 & Char2 & Char3 & Char4 & Char5
+    end
+```
 
 ---
 
@@ -108,8 +121,63 @@ I (26120) app: Connected with IP Address: 192.168.1.155
 2. เมื่อเชื่อมต่อ Wi-Fi สำเร็จ (`WIFI_PROV_CRED_SUCCESS`) $\rightarrow$ เกิด Event `WIFI_PROV_END`
 3. Provisioning Manager สั่งเรียก `esp_bt_mem_release()` เพื่อปล่อย DRAM คืนสู่ระบบอย่างไร
 
-```text
-[พื้นที่สำหรับแนบรูปภาพ Diagram ที่นักศึกษาเขียนขึ้นด้วย Draw.io / Mermaid / วาดมือ]
+```mermaid
+graph TD
+    subgraph GATT_Tree["GATT Tree — ESP32 BLE Provisioning Server"]
+        PS["🔵 Primary Service<br/>UUID: 021a9004-0382-4aea-bff4-6b3f1c5adfb4"]
+
+        C1["Characteristic (UUID: ...FF51)<br/>Properties: Write, Notify"]
+        D1["Descriptor 0x2901<br/>'prov-session'<br/>(Key Exchange / Security Handshake)"]
+
+        C2["Characteristic (UUID: ...FF52)<br/>Properties: Write, Notify"]
+        D2["Descriptor 0x2901<br/>'prov-config'<br/>(รับ SSID + Password)"]
+
+        C3["Characteristic (UUID: ...FF53)<br/>Properties: Write, Notify"]
+        D3["Descriptor 0x2901<br/>'prov-scan'<br/>(สแกน Wi-Fi AP รอบตัว)"]
+
+        C4["Characteristic (UUID: ...FF54)<br/>Properties: Read"]
+        D4["Descriptor 0x2901<br/>'proto-ver'<br/>(ตรวจสอบ Protocol Version)"]
+
+        C5["Characteristic (UUID: ...FF55)<br/>Properties: Write, Notify"]
+        D5["Descriptor 0x2901<br/>'custom-data'<br/>(ส่งข้อมูลเพิ่มเติม เช่น STUDENT_ID)"]
+
+        PS --> C1 --> D1
+        PS --> C2 --> D2
+        PS --> C3 --> D3
+        PS --> C4 --> D4
+        PS --> C5 --> D5
+    end
+```
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant App as 📱 ESP BLE Provisioning App
+    participant ESP as ⚡ ESP32 BLE GATT Server
+    participant WiFi as 📡 Wi-Fi Router
+    participant Mem as 🧠 DRAM Memory
+
+    Note over ESP: LED 2 Slow Blink 500ms — BLE Advertising
+    App->>ESP: BLE Connect (GATT)
+    ESP->>ESP: Event: PROTOCOMM_TRANSPORT_BLE_CONNECTED
+    Note over ESP: LED 2 Fast Blink 100ms
+
+    App->>ESP: Write Char FF51 (prov-session)<br/>Key Exchange + PoP: abcd1234
+    ESP-->>App: Notify: Session Established
+    ESP->>ESP: Event: PROTOCOMM_SECURITY_SESSION_SETUP_OK
+
+    App->>ESP: Write Char FF52 (prov-config)<br/>SSID + Password (Encrypted)
+    ESP->>ESP: Event: WIFI_PROV_CRED_RECV
+    ESP->>WiFi: esp_wifi_connect()
+    WiFi-->>ESP: Connected + IP Address
+
+    ESP->>ESP: Event: WIFI_PROV_CRED_SUCCESS
+    ESP-->>App: Notify: Provisioning Success
+    ESP->>ESP: Event: WIFI_PROV_END
+    Note over ESP: LED 2 OFF / LED 1 Heartbeat
+
+    ESP->>Mem: esp_bt_mem_release(ESP_BT_MODE_BTDM)
+    Note over Mem: คืน BT Stack RAM กลับสู่ DRAM<br/>ประหยัด ~70KB
 ```
 
 ---
@@ -130,4 +198,3 @@ I (26120) app: Connected with IP Address: 192.168.1.155
 1. เหตุใด BLE Provisioning จึงไม่ส่งผลให้สัญญาณ Wi-Fi บนสมาร์ตโฟนของผู้ใช้หลุดระหว่างทำรายการ?
 2. Descriptor `0x2901` มีความสำคัญอย่างไรต่อการที่แอปพลิเคชันมือถือจะทราบว่า Characteristic แต่ละตัวใช้ทำหน้าที่อะไร?
 3. การที่ ESP-IDF มีฟังก์ชัน `esp_bt_mem_release()` มีประโยชน์อย่างไรต่อการทำงานของแอปพลิเคชัน IoT หลังเชื่อมต่อ Wi-Fi สำเร็จ?
-

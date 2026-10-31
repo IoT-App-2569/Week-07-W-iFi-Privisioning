@@ -38,8 +38,23 @@
 - อีกขาหนึ่งของสวิตช์ $\rightarrow$ ต่อลง **GND**
 *(เปิดใช้งาน Internal Pull-up Resistor ในโค้ด จึงไม่ต้องต่อตัวต้านทานภายนอกเพิ่ม)*
 
-<p align="center"><img src="Fig_06-Labsheet-07-1-Reset-Mechanisms-and-NVS-Forensics_2026-10-25T10-45-34_academic.svg" alt="06-Labsheet-07-1-Reset-Mechanisms-and-NVS-Forensics"></p>
-<p align="center"><b></b>การต่อวงจรปุ่มกด Factory Reset (GPIO 18)</p>
+```mermaid
+flowchart TD
+    Start["⚡ เริ่มต้นทำงาน (app_main)"] --> Check_GPIO["1. ตรวจสอบปุ่ม Factory Reset (GPIO 18)<br/>ถูกกดค้างไว้ 3 วินาทีหรือไม่?"]
+    
+    Check_GPIO -- "กดค้างครบ 3 วิ (Low/0)" --> HW_Reset["[Hardware Reset Mode]<br/>สั่ง nvs_flash_erase()<br/>และเข้าสู่ Provisioning"]
+    Check_GPIO -- "ไม่ได้กด (High/1)" --> Check_Config["2. ตรวจสอบ Build-time Flag<br/>(#ifdef CONFIG_EXAMPLE_RESET_PROVISIONED)"]
+    
+    HW_Reset --> Init_Prov["เข้าสู่โหมด Provisioning<br/>(กระจายสัญญาณ BLE / SoftAP)"]
+    
+    Check_Config -- "เปิดใช้งาน Flag" --> Menu_Reset["[Menuconfig Reset]<br/>เรียก wifi_prov_mgr_reset_provisioning()"]
+    Menu_Reset --> Init_Prov
+    
+    Check_Config -- "ปิดใช้งาน Flag" --> Check_NVS["3. ตรวจสอบค่าใน NVS Flash<br/>wifi_prov_mgr_is_provisioned()"]
+    
+    Check_NVS -- "true (มีข้อมูลเดิม)" --> STA_Mode["[Already Provisioned]<br/>เริ่ม Wi-Fi Station ทันที"]
+    Check_NVS -- "false (ว่างเปล่า/เพิ่งถูกลบด้วย CLI)" --> Init_Prov
+```
 
 ---
 
@@ -160,14 +175,45 @@ void app_main(void)
 4. การเรียกฟังก์ชัน `wifi_prov_mgr_is_provisioned(&provisioned)`
 5. จุดแยกสายการทำงานเข้าสู่โหมด **Provisioning Mode** หรือ **Station Mode**
 
-```text
-[พื้นที่สำหรับแนบรูปภาพ Flowchart ที่นักศึกษาเขียนขึ้นด้วย Draw.io / Mermaid / วาดมือ]
+```mermaid
+flowchart TD
+    A(["⚡ เริ่มต้น app_main()"]) --> B["ตรวจสอบปุ่ม GPIO 18\nกดค้าง 3 วินาทีหรือไม่?"]
+    B -- "กดค้างครบ 3 วิ (LOW)" --> C["nvs_flash_erase()\nHardware Factory Reset"]
+    B -- "ไม่ได้กด (HIGH)" --> D["nvs_flash_init()"]
+    C --> D
+    D --> E{"NVS Error?\nNO_FREE_PAGES\nหรือ NEW_VERSION?"}
+    E -- "ใช่" --> F["nvs_flash_erase()\n+ nvs_flash_init()"]
+    E -- "ไม่" --> G
+    F --> G{"#ifdef CONFIG_EXAMPLE\n_RESET_PROVISIONED\nเปิดอยู่?"}
+    G -- "ใช่ (Menuconfig Flag)" --> H["wifi_prov_mgr_reset\n_provisioning()"]
+    G -- "ไม่" --> I
+    H --> I["wifi_prov_mgr_is\n_provisioned(&provisioned)"]
+    I --> J{"provisioned\n== true?"}
+    J -- "true (มีข้อมูลเดิม)" --> K(["Station Mode\nwifi_init_sta()"])
+    J -- "false (ยังไม่ได้ตั้งค่า)" --> L(["Provisioning Mode\nเปิด BLE / SoftAP\nรอ Credentials จากมือถือ"])
 ```
 
 ### ภารกิจที่ 2 ผังสถานะการเปลี่ยนจังหวะไฟ LED 1 (Wi-Fi STA Indicator)
 ให้นักศึกษาวาด State Diagram แสดงการเปลี่ยนสถานะของ **LED 1 (GPIO 2)**:
 - เงื่อนไขใดทำให้ LED 1 เข้าสู่สถานะ `LED_STA_MODE_DISCONNECTED` (กระพริบ 200ms Mark / 200ms Space)
 - เงื่อนไขหรือ Event ใดทำให้เปลี่ยนเป็น `LED_STA_MODE_CONNECTED` (Heartbeat 200ms ทุก 1s)
+
+```mermaid
+stateDiagram-v2
+    [*] --> LED_OFF : เริ่มต้น / อยู่ในโหมด Provisioning
+
+    LED_OFF --> LED_STA_MODE_DISCONNECTED : WIFI_PROV_CRED_SUCCESS\nหรือ Already Provisioned\nแต่ยังต่อ Wi-Fi ไม่ได้
+
+    LED_STA_MODE_DISCONNECTED --> LED_STA_MODE_CONNECTED : IP_EVENT_STA_GOT_IP\n(ได้รับ IP Address สำเร็จ)
+
+    LED_STA_MODE_CONNECTED --> LED_STA_MODE_DISCONNECTED : WIFI_EVENT_STA_DISCONNECTED\n(Wi-Fi หลุด)
+
+    LED_STA_MODE_DISCONNECTED : LED_STA_MODE_DISCONNECTED\n⚠️ กระพริบ 200ms ON / 200ms OFF
+
+    LED_STA_MODE_CONNECTED : LED_STA_MODE_CONNECTED\n💓 Heartbeat 200ms ON / 800ms OFF
+
+    LED_OFF : LED_OFF\n🌑 ดับสนิท
+```
 
 ---
 
@@ -186,4 +232,3 @@ void app_main(void)
 2. เพราะเหตุใดคำสั่ง `idf.py erase-flash` จึงทำให้ข้อมูลเฟิร์มแวร์ Application หายไปด้วย ในขณะที่ `nvs_flash_erase()` ไม่ทำให้เฟิร์มแวร์หาย?
 3. การออกแบบปุ่ม Factory Reset บนอุปกรณ์ IoT เชิงพาณิชย์ เหตุใดจึงต้องกำหนดให้ผู้ใช้กดปุ่มค้างไว้ 3-5 วินาที แทนที่จะสั่งลบข้อมูลทันทีที่แตะปุ่มเพียงเสี้ยววินาที?
 4. หากอุปกรณ์ IoT ถูกติดตั้งอยู่บนเสาสูงหรือฝังอยู่ในผนัง วิธีการ Reset ทางกายภาพรูปแบบใดเหมาะสมที่สุด?
-

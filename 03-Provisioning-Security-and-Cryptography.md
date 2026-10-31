@@ -27,8 +27,26 @@ ESP-IDF จึงออกแบบ **Protocomm Security Schemes** ไว้ 3 �
 
 Security 1 เป็นโหมดความปลอดภัยมาตรฐานที่นิยมใช้งานอย่างแพร่หลายในอุปกรณ์ ESP32
 
-<p align="center"><img src="Fig_03-Provisioning-Security-and-Cryptography_2026-10-25T10-43-46_academic.svg" alt="03-Provisioning-Security-and-Cryptography" width="800" style="max-width: 800px; width: 100%; height: auto;" ></p>
-<p align="center"><b></b> Security 1 (X25519 + AES-CTR + Proof-of-Possession)</p>
+```mermaid
+sequenceDiagram
+    autonumber
+    participant App as 📱 Provisioner App (Phone)
+    participant ESP as ⚡ ESP32 Node
+    
+    Note over App,ESP: ทั้งสองฝั่งมี PoP ตรงกัน (เช่น "abcd1234")<br/>จากการสแกน QR Code หรือพิมพ์รหัส
+    
+    App->>ESP: 1. ส่ง Public Key ฝั่ง Client (Client Ephemeral PubKey)
+    ESP->>App: 2. ตอบกลับ Public Key ฝั่ง Device (Device Ephemeral PubKey) + Random Device Nonce
+    
+    Note over App,ESP: ทั้งสองฝั่งคำนวณ Shared Secret จาก X25519<br/>และนำ PoP มาผสมผ่าน KDF (Key Derivation Function)<br/>สร้าง Session Key (AES-CTR Key)
+    
+    App->>ESP: 3. ส่ง Hash ยืนยันว่าตนมี PoP จริง (Client Verification)
+    ESP-->>App: 4. ตรวจสอบถูกต้อง ตอบรับ Session Established!
+    
+    Note over App,ESP: จากนี้ไป ข้อมูล Wi-Fi ทั้งหมดจะถูกเข้ารหัสด้วย AES-CTR
+    App->>ESP: 5. ส่ง Encrypted(SSID, Password)
+    ESP->>ESP: ถอดรหัสและบันทึกลง NVS Flash
+```
 
 ### Proof-of-Possession (PoP) คืออะไร?
 **Proof-of-Possession (PoP)** คือรหัสลับเฉพาะเครื่อง (มักพิมพ์เป็นตัวเลข/ตัวอักษร 8-12 ตัวบนสติ๊กเกอร์ หรือฝังอยู่ใน QR Code) 
@@ -40,8 +58,13 @@ Security 1 เป็นโหมดความปลอดภัยมาตร
 
 Security 2 อิงตามมาตรฐาน **SRP6a (Secure Remote Password Protocol - RFC 5054)** ซึ่งเป็นโปรโตคอลการพิสูจน์ตัวตนแบบ **Zero-Knowledge Proof (ZKP)**
 
-<p align="center"><img src="Fig_03-Provisioning-Security-and-Cryptography_2026-10-25T10-43-58_academic.svg" alt="03-Provisioning-Security-and-Cryptography" width="600"  ></p>
-<p align="center"><b></b>  Security 2 (SRP6a + AES-GCM)</p>
+```mermaid
+graph TD
+    A["รหัสผ่านตั้งต้น (Password)<br/>เช่น abcd1234"] --> B["สุ่ม Salt 16 ไบต์"]
+    A & B --> C["คำนวณ Verifier (384 ไบต์)<br/>ผ่าน SRP6a Math Function"]
+    C --> D[("ฝังเฉพาะ Salt และ Verifier ลงบน ESP32<br/>(ไม่มีรหัสผ่านจริงอยู่ในชิป!)")]
+    A --> E["พิมพ์รหัสผ่านไว้ใน QR Code Sticker"]
+```
 
 ### ข้อได้เปรียบทางด้าน Forensic & Security ของ Sec2
 1. **No Plaintext Password in Flash** แม้ผู้โจมตีจะถอดชิป Flash ออกมา Dump ข้อมูล ก็จะไม่พบรหัสผ่าน (พบเพียง Salt และ Verifier ทางคณิตศาสตร์)
