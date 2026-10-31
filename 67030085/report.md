@@ -290,9 +290,9 @@ sequenceDiagram
 Log
 ```text
 load:0x40080400,len:3860
---- 0x40080400: _invalid_pc_placeholder at C:/Users/09677/esp/v5.5.1/esp-idf/components/xtensa/xtensa_vectors.S:2235
+--- 0x40080400: _invalid_pc_placeholder at C:/Users/Thanu/esp/v5.5.1/esp-idf/components/xtensa/xtensa_vectors.S:2235
 entry 0x40080638
---- 0x40080638: call_start_cpu0 at C:/Users/09677/esp/v5.5.1/esp-idf/components/bootloader/subproject/main/bootloader_start.c:25
+--- 0x40080638: call_start_cpu0 at C:/Users/Thanu/esp/v5.5.1/esp-idf/components/bootloader/subproject/main/bootloader_start.c:25
 I (29) boot: ESP-IDF v5.5.1-dirty 2nd stage bootloader
 I (29) boot: compile time Aug 24 2026 10:19:50
 I (29) boot: Multicore bootloader
@@ -562,9 +562,9 @@ Log
 ho 0 tail 12 room 4
 load:0x40078000,len:15916
 load:0x40080400,len:3860
---- 0x40080400: _invalid_pc_placeholder at C:/Users/09677/esp/v5.5.1/esp-idf/components/xtensa/xtensa_vectors.S:2235
+--- 0x40080400: _invalid_pc_placeholder at C:/Users/Thanu/esp/v5.5.1/esp-idf/components/xtensa/xtensa_vectors.S:2235
 entry 0x40080638
---- 0x40080638: call_start_cpu0 at C:/Users/09677/esp/v5.5.1/esp-idf/components/bootloader/subproject/main/bootloader_start.c:25
+--- 0x40080638: call_start_cpu0 at C:/Users/Thanu/esp/v5.5.1/esp-idf/components/bootloader/subproject/main/bootloader_start.c:25
 I (29) boot: ESP-IDF v5.5.1-dirty 2nd stage bootloader
 I (29) boot: compile time Aug 24 2026 10:48:55
 I (29) boot: Multicore bootloader
@@ -764,9 +764,9 @@ sequenceDiagram
 
 Log
 ```text
---- 0x40080400: _invalid_pc_placeholder at C:/Users/09677/esp/v5.5.1/esp-idf/components/xtensa/xtensa_vectors.S:2235
+--- 0x40080400: _invalid_pc_placeholder at C:/Users/Thanu/esp/v5.5.1/esp-idf/components/xtensa/xtensa_vectors.S:2235
 entry 0x40080638
---- 0x40080638: call_start_cpu0 at C:/Users/09677/esp/v5.5.1/esp-idf/components/bootloader/subproject/main/bootloader_start.c:25
+--- 0x40080638: call_start_cpu0 at C:/Users/Thanu/esp/v5.5.1/esp-idf/components/bootloader/subproject/main/bootloader_start.c:25
 I (29) boot: ESP-IDF v5.5.1-dirty 2nd stage bootloader
 I (29) boot: compile time Aug 24 2026 11:16:18
 I (29) boot: Multicore bootloader
