@@ -1,0 +1,336 @@
+## 06-Labsheet-07-1-Reset-Mechanisms-and-NVS-Forensics
+## 5. กิจกรรมถอดรหัสซอร์สโค้ดและเขียนผังงาน (Code Deconstruction & Flowchart Assignment)
+
+ให้นักศึกษาศึกษาโค้ดใน `main/main.c` และ `main/led_indicator.c` แล้วเขียน **ผังงาน (Flowchart / State Diagram)** เพื่ออธิบายการตัดสินใจและการทำงานของระบบ:
+
+### ภารกิจที่ 1  ผังงานการตัดสินใจช่วง Bootstrapping & Reset Decision
+ให้นักศึกษาวาด Flowchart แสดงลำดับตรรกะการตรวจสอบเงื่อนไขตั้งแต่เริ่มต้นรันฟังก์ชัน `app_main()` โดยต้องครอบคลุม:
+1. การตรวจสอบสถานะปุ่ม **GPIO 18** (ตรวจจับการกดค้าง 3 วินาที)
+2. การทำงานของ `nvs_flash_init()` และกรณีที่ต้อง `nvs_flash_erase()`
+3. การตรวจสอบ Macro `#ifdef CONFIG_EXAMPLE_RESET_PROVISIONED`
+4. การเรียกฟังก์ชัน `wifi_prov_mgr_is_provisioned(&provisioned)`
+5. จุดแยกสายการทำงานเข้าสู่โหมด **Provisioning Mode** หรือ **Station Mode**
+
+```mermaid
+graph TD
+    Start([Start: app_main]) --> CheckBtn{1. กดปุ่ม GPIO 18 ค้างไว้ 3 วินาทีหรือไม่?}
+    
+    CheckBtn -- Yes --> Erase1[nvs_flash_erase] --> InitNVS
+    CheckBtn -- No --> InitNVS[2. nvs_flash_init]
+    
+    InitNVS --> CheckNVSErr{พบ Error: NO_FREE_PAGES <br>หรือ NEW_VERSION_FOUND?}
+    CheckNVSErr -- Yes --> Erase2[nvs_flash_erase] --> InitNVS2[nvs_flash_init] --> ProvInit
+    CheckNVSErr -- No --> ProvInit[wifi_prov_mgr_init]
+    
+    ProvInit --> CheckMacro{3. มีการเปิดใช้ Macro <br>CONFIG_EXAMPLE_RESET_PROVISIONED?}
+    
+    CheckMacro -- Yes --> ResetProv[wifi_prov_mgr_reset_provisioning] --> CheckProvStatus
+    CheckMacro -- No --> CheckProvStatus[4. wifi_prov_mgr_is_provisioned]
+    
+    CheckProvStatus --> IsProv{5. สถานะ provisioned == true?}
+    
+    IsProv -- Yes --> STAMode[เข้าสู่โหมด Station Mode <br>เชื่อมต่อ Wi-Fi ทันที]
+    IsProv -- No --> ProvMode[เข้าสู่โหมด Provisioning Mode <br>รอสแกน QR Code]
+    
+    STAMode --> End([End / Idle Loop])
+    ProvMode --> End
+```
+
+### ภารกิจที่ 2 ผังสถานะการเปลี่ยนจังหวะไฟ LED 1 (Wi-Fi STA Indicator)
+ให้นักศึกษาวาด State Diagram แสดงการเปลี่ยนสถานะของ **LED 1 (GPIO 2)**:
+- เงื่อนไขใดทำให้ LED 1 เข้าสู่สถานะ `LED_STA_MODE_DISCONNECTED` (กระพริบ 200ms Mark / 200ms Space)
+- เงื่อนไขหรือ Event ใดทำให้เปลี่ยนเป็น `LED_STA_MODE_CONNECTED` (Heartbeat 200ms ทุก 1s)
+
+```mermaid
+stateDiagram-v2
+    [*] --> LED_STA_OFF : บอร์ดเพิ่งเปิดทำงาน
+    
+    LED_STA_OFF --> LED_STA_DISCONNECTED : Event: WIFI_EVENT_STA_START
+    
+    state LED_STA_DISCONNECTED {
+        [*] --> Blinking_Alert
+        Blinking_Alert : กระพริบ 200ms ON / 200ms OFF
+    }
+    
+    state LED_STA_CONNECTED {
+        [*] --> Blinking_Heartbeat
+        Blinking_Heartbeat : กระพริบ 200ms ON / 800ms OFF (ทุก 1s)
+    }
+
+    LED_STA_DISCONNECTED --> LED_STA_CONNECTED : Event: IP_EVENT_STA_GOT_IP <br>(ได้รับ IP Address)
+    
+    LED_STA_CONNECTED --> LED_STA_DISCONNECTED : Event: WIFI_EVENT_STA_DISCONNECTED <br>(หลุดการเชื่อมต่อ)
+```
+
+---
+
+## 6. ตารางบันทึกผลการทดลอง (Experiment Results)
+
+| รูปแบบการ Reset                  | คำสั่ง / พฤติกรรมที่ทำ               | พฤติกรรมของ LED แต่ละดวงหลังเปิดเครื่อง                                     | สถานะใน Serial Monitor                                                                                                                            |
+| :------------------------------- | :----------------------------------- | :-------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **1. CLI Erase**                 | `idf.py erase-flash`                 | ดับ (OFF)<br>(เพราะระบบล้างข้อมูลและหยุดรอ ไม่ได้เข้าสู่โหมด Wi-Fi Station) | `[STATUS]: Device is NOT provisioned (NVS is empty)`<br><br>`Ready for Provisioning Lab 7-2...`                                                   |
+| **2. Menuconfig Flag**           | `CONFIG_EXAMPLE_RESET_PROVISIONED=y` | ดับ (OFF)                                                                   | `[FORENSIC]: Menuconfig Reset flag detected! Erasing credentials...`<br><br>ตามด้วย `[STATUS]: Device is NOT provisioned...`                      |
+| **3. Hardware Button (GPIO 18)** | กดปุ่ม GPIO 18 ค้าง 3 วินาที         | ดับ (OFF)                                                                   | `Holding button... 3/3 seconds`<br>  <br>`>>> FACTORY RESET TRIGGERED! ERASING NVS FLASH <<<`<br><br>และ `[STATUS]: Device is NOT provisioned...` |
+
+---
+
+## 7. คำถามท้ายการทดลอง (Post-Lab Questions)
+1. เพราะเหตุใดการกดปุ่ม BOOT (GPIO 0) ค้างไว้ในจังหวะรีเซ็ตบอร์ด จึงทำให้โปรแกรมค้างอยู่ที่ ROM Bootloader และไม่ยอมทำงานต่อ?
+	**คำตอบ:** เพราะขา GPIO 0 ของ ESP32 ทำหน้าที่เป็น **Strapping Pin** (ขาที่ใช้กำหนดโหมดการบูต) หากสถานะของขา GPIO 0 เป็น Logic Low (ถูกกดลง GND) ในจังหวะที่บอร์ดกำลังเริ่มทำงาน ฮาร์ดแวร์จะสั่งให้ชิปเข้าสู่โหมด **Download Boot (UART Download Mode)** ทันที ซึ่งเป็นการรัน ROM Bootloader เพื่อรอรับการแฟลชเฟิร์มแวร์ใหม่ผ่านสาย USB ชิปจึงหยุดรออยู่ตรงนั้นและไม่ยอมเข้าไปอ่านเฟิร์มแวร์ Application ใน Flash Memory
+2. เพราะเหตุใดคำสั่ง `idf.py erase-flash` จึงทำให้ข้อมูลเฟิร์มแวร์ Application หายไปด้วย ในขณะที่ `nvs_flash_erase()` ไม่ทำให้เฟิร์มแวร์หาย?
+	 **คำตอบ:** เพราะขอบเขตการลบข้อมูล (Scope) ต่างกันอย่างสิ้นเชิง: 
+	* `idf.py erase-flash`: เป็นคำสั่งระดับเครื่องมือภายนอก (ผ่าน Command Line) ที่สั่งลบ **ชิปหน่วยความจำ Flash ทั้งลูก** แบบถอนรากถอนโคน ข้อมูลทุกพาร์ทิชัน (Bootloader, Partition Table, NVS และ Application) จึงหายทั้งหมด 
+	* `nvs_flash_erase()`: เป็นเพียงคำสั่งระดับซอฟต์แวร์ (API) ภายในเฟิร์มแวร์ ที่ชี้เป้าล้างข้อมูลเฉพาะใน **NVS Partition** (พื้นที่เก็บการตั้งค่า/Wi-Fi) เท่านั้น โครงสร้างพาร์ทิชันอื่นและเฟิร์มแวร์ Application จึงยังคงปลอดภัย
+3. การออกแบบปุ่ม Factory Reset บนอุปกรณ์ IoT เชิงพาณิชย์ เหตุใดจึงต้องกำหนดให้ผู้ใช้กดปุ่มค้างไว้ 3-5 วินาที แทนที่จะสั่งลบข้อมูลทันทีที่แตะปุ่มเพียงเสี้ยววินาที?
+	**คำตอบ:** เพื่อป้องกัน **Human Error หรือการเผลอกดโดยไม่ได้ตั้งใจ (Accidental Press)** การทำ Factory Reset คือการลบการตั้งค่าและรหัสผ่านทั้งหมดทิ้ง ซึ่งสร้างความยุ่งยากหากเกิดขึ้นโดยไม่ตั้งใจ การบังคับให้กดค้าง (Long Press) จึงเป็นการบังคับให้ผู้ใช้ยืนยัน "ความตั้งใจจริง" ก่อนที่ระบบจะทำการลบข้อมูล
+4. หากอุปกรณ์ IoT ถูกติดตั้งอยู่บนเสาสูงหรือฝังอยู่ในผนัง วิธีการ Reset ทางกายภาพรูปแบบใดเหมาะสมที่สุด?
+	**คำตอบ:** วิธีการที่เหมาะสมที่สุดคือการใช้ **Power-Cycle Sequence** 
+	* **หลักการทำงาน:** ให้ผู้ใช้สับสวิตช์ไฟหลัก (Breaker หรือสวิตช์ผนัง) เปิดและปิดสลับกันอย่างรวดเร็วตามจำนวนครั้งที่กำหนด (เช่น เปิด-ปิดต่อเนื่อง 5 ครั้ง) 
+	* ไมโครคอนโทรลเลอร์จะถูกโปรแกรมให้นับจังหวะการตัดต่อไฟในช่วงเสี้ยววินาทีแรกที่บูตเครื่อง หากนับได้ครบตามเงื่อนไข จะทริกเกอร์ฟังก์ชัน Factory Reset ตัวเองทันที โดยที่ผู้ใช้ไม่ต้องเสี่ยงปีนขึ้นไปหาปุ่มกดบนตัวอุปกรณ์
+
+Log
+```text
+rst:0x1 (POWERON_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0030,len:6380
+ho 0 tail 12 room 4
+load:0x40078000,len:15916
+load:0x40080400,len:3860
+--- 0x40080400: _invalid_pc_placeholder at C:/Users/Thanu/esp/v5.5.1/esp-idf/components/xtensa/xtensa_vectors.S:2235
+entry 0x40080638
+--- 0x40080638: call_start_cpu0 at C:/Users/Thanu/esp/v5.5.1/esp-idf/components/bootloader/subproject/main/bootloader_start.c:25
+I (29) boot: ESP-IDF v5.5.1 2nd stage bootloader
+I (29) boot: compile time Aug 25 2026 09:28:40
+I (29) boot: Multicore bootloader
+I (31) boot: chip revision: v3.1
+I (33) boot.esp32: SPI Speed      : 40MHz
+I (37) boot.esp32: SPI Mode       : DIO
+I (41) boot.esp32: SPI Flash Size : 2MB
+I (44) boot: Enabling RNG early entropy source...
+I (49) boot: Partition Table:
+I (51) boot: ## Label            Usage          Type ST Offset   Length
+I (58) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (64) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (71) boot:  2 factory          factory app      00 00 00010000 00100000
+I (77) boot: End of partition table
+I (81) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=1d168h (119144) map
+I (129) esp_image: segment 1: paddr=0002d190 vaddr=3ffb0000 size=02e88h ( 11912) load
+I (133) esp_image: segment 2: paddr=00030020 vaddr=400d0020 size=921f4h (598516) map
+I (338) esp_image: segment 3: paddr=000c221c vaddr=3ffb2e88 size=010a4h (  4260) load
+I (340) esp_image: segment 4: paddr=000c32c8 vaddr=40080000 size=17f8ch ( 98188) load
+I (380) esp_image: segment 5: paddr=000db25c vaddr=50000000 size=00020h (    32) load
+I (392) boot: Loaded app from partition at offset 0x10000
+I (392) boot: Disabling RNG early entropy source...
+I (403) cpu_start: Multicore app
+I (411) cpu_start: Pro cpu start user code
+I (411) cpu_start: cpu freq: 160000000 Hz
+I (411) app_init: Application information:
+I (411) app_init: Project name:     lab7_1_reset_nvs_forensics
+I (417) app_init: App version:      f874021-dirty
+I (421) app_init: Compile time:     Aug 25 2026 10:34:53
+I (426) app_init: ELF file SHA256:  641db2348...
+I (431) app_init: ESP-IDF:          v5.5.1
+I (434) efuse_init: Min chip rev:     v0.0
+I (438) efuse_init: Max chip rev:     v3.99 
+I (442) efuse_init: Chip rev:         v3.1
+I (446) heap_init: Initializing. RAM available for dynamic allocation:
+I (452) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM
+I (457) heap_init: At 3FFB8028 len 00027FD8 (159 KiB): DRAM
+I (463) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM
+I (468) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM
+I (474) heap_init: At 40097F8C len 00008074 (32 KiB): IRAM
+I (480) spi_flash: detected chip: generic
+I (482) spi_flash: flash io: dio
+W (485) spi_flash: Detected size(4096k) larger than the size in the binary image header(2048k). Using the size in the binary image header.
+I (499) main_task: Started on CPU0
+I (509) main_task: Calling app_main()
+I (509) LAB7_1_RESET: Hold GPIO 18 button for 3 seconds to trigger Factory Reset...
+I (1509) LAB7_1_RESET: Holding button... 1/3 seconds
+I (2509) LAB7_1_RESET: Holding button... 2/3 seconds
+I (3509) LAB7_1_RESET: Holding button... 3/3 seconds
+W (3509) LAB7_1_RESET: =================================================
+W (3509) LAB7_1_RESET: >>> FACTORY RESET TRIGGERED! ERASING NVS FLASH <<<
+W (3509) LAB7_1_RESET: =================================================
+W (3519) LAB7_1_RESET: [FORENSIC]: User requested Flash Erase!
+I (3599) wifi:wifi driver task: 3ffc0774, prio:23, stack:6656, core=0
+I (3599) wifi:wifi firmware version: 14da9b7
+I (3599) wifi:wifi certification version: v7.0
+I (3599) wifi:config NVS flash: enabled
+I (3599) wifi:config nano formatting: disabled
+I (3609) wifi:Init data frame dynamic rx buffer num: 32
+I (3609) wifi:Init static rx mgmt buffer num: 5
+I (3619) wifi:Init management short buffer num: 32
+I (3619) wifi:Init dynamic tx buffer num: 32
+I (3619) wifi:Init static rx buffer size: 1600
+I (3629) wifi:Init static rx buffer num: 10
+I (3629) wifi:Init dynamic rx buffer num: 32
+I (3639) wifi_init: rx ba win: 6
+I (3639) wifi_init: accept mbox: 6
+I (3639) wifi_init: tcpip mbox: 32
+I (3649) wifi_init: udp mbox: 6
+I (3649) wifi_init: tcp mbox: 6
+I (3649) wifi_init: tcp tx win: 5760
+I (3649) wifi_init: tcp rx win: 5760
+I (3659) wifi_init: tcp mss: 1440
+I (3659) wifi_init: WiFi IRAM OP enabled
+I (3659) wifi_init: WiFi RX IRAM OP enabled
+W (3669) LAB7_1_RESET: --------------------------------------------------
+W (3679) LAB7_1_RESET: [STATUS]: Device is NOT provisioned (NVS is empty)
+W (3679) LAB7_1_RESET: Ready for Provisioning Lab 7-2 (SoftAP) or 7-3 (BLE)!
+W (3689) LAB7_1_RESET: --------------------------------------------------
+```
+
+---
+
+## 07-Labsheet-07-2-SoftAP-Provisioning-and-HTTP-Sniffing
+
+## 5. กิจกรรมถอดรหัสซอร์สโค้ดและเขียนผังงาน (Code Deconstruction & Sequence Flow Assignment)
+
+ให้นักศึกษาแกะรอยการทำงานจาก `main/main.c` ในโหมด SoftAP แล้วเขียน **แผนภาพลำดับเหตุการณ์ (Sequence Diagram)**:
+
+### ภารกิจที่ 1: ผังลำดับการสื่อสารผ่าน HTTP Endpoints (SoftAP Scheme Sequence Flow)
+ให้นักศึกษาวาด Sequence Diagram แสดงปฏิสัมพันธ์ระหว่าง 3 ฝ่าย:
+1. **Smartphone App (ESP SoftAP Prov)**
+2. **ESP32 SoftAP Webserver (Protocomm Layer)**
+3. **Wi-Fi Router (AP ปลายทาง)**
+
+**จุดที่ต้องระบุในผัง:**
+- จังหวะที่มือถือยิง HTTP POST ไปยัง Endpoint แต่ละตัว (`/prov-session`, `/prov-scan`, `/prov-config`)
+- Event ของ ESP-IDF ที่ถูก Trigger ใน `event_handler()` เช่น:
+  - `WIFI_EVENT_AP_STACONNECTED`
+  - `PROTOCOMM_SECURITY_SESSION_SETUP_OK`
+  - `WIFI_PROV_CRED_RECV`
+  - `WIFI_PROV_CRED_SUCCESS`
+  - `IP_EVENT_STA_GOT_IP`
+- สถานะจังหวะการกระพริบของ **LED 3 (GPIO 5)** และ **LED 1 (GPIO 2)** ในแต่ละช่วง
+
+```text
+[พื้นที่สำหรับแนบรูปภาพ Sequence Diagram ที่นักศึกษาเขียนขึ้นด้วย Draw.io / Mermaid / วาดมือ]
+```
+
+---
+
+## 6. ตารางบันทึกผลการทดลอง (Experiment Results)
+
+| รายการตรวจสอบ | ค่าที่บันทึกได้จากการทดลอง |
+| :--- | :--- |
+| **1. ชื่อ SoftAP SSID ของ ESP32** | `PROV_`.............................. |
+| **2. รหัส PoP (Proof of Possession)** | ..................................................... |
+| **3. ข้อความใน QR Code Payload (JSON)** | ..................................................... |
+| **4. พฤติกรรมไฟ LED 3 (GPIO 5) ช่วงรอ vs ช่วงส่งข้อมูล** | ช่วงรอ: .......................................<br/>ช่วงส่ง: ....................................... |
+| **5. IP Address ที่ ESP32 ได้รับจาก Router** | ..................................................... |
+| **6. เวลาที่ใช้ตั้งแต่เริ่มจนจบกระบวนการ (วินาที)** | ..................................................... |
+
+---
+
+## 7. คำถามท้ายการทดลอง (Post-Lab Questions)
+1. ในโหมด SoftAP Scheme สมาร์ตโฟนส่งข้อมูลหา ESP32 ผ่านโปรโตคอลและ IP Address ใด?
+2. หากผู้ใช้ป้อนรหัสผ่าน Wi-Fi ผิดในแอปมือถือ จะเกิด Event ใดขึ้นบน ESP32 (`WIFI_PROV_CRED_FAIL` หรือไม่) และ ESP32 มีพฤติกรรมอย่างไร?
+3. ทำไมผู้ผลิต IoT ส่วนใหญ่จึงมองว่ากระบวนการเชื่อมต่อแบบ SoftAP มีขั้นตอนที่ยุ่งยากสำหรับผู้ใช้ทั่วไปเมื่อเทียบกับ BLE?
+
+Log
+```text
+
+```
+
+---
+
+## 08-Labsheet-07-3-BLE-Provisioning-and-GATT-Forensics
+
+## 5. กิจกรรมถอดรหัสซอร์สโค้ดและเขียนผังงาน (Code Deconstruction & BLE GATT Architecture Assignment)
+
+ให้นักศึกษาแกะรอยการทำงานของโมดูล BLE Provisioning ใน `main/main.c` แล้วเขียน **ผังโครงสร้างและลำดับเหตุการณ์**:
+
+### ภารกิจที่ 1: ผังโครงสร้าง GATT Tree & Endpoint Mapping
+ให้นักศึกษาวาดโครงสร้างต้นไม้ (Tree Diagram / Block Diagram) แสดงความสัมพันธ์ระหว่าง:
+- **Primary Service (128-bit UUID: `021a9004-...`)**
+  - **Characteristic UUIDs** แต่ละตัว
+  - **Descriptor 0x2901 (User Description)** ที่ผูกเข้ากับ Protocomm Endpoints (`prov-session`, `prov-config`, `prov-scan`, `proto-ver`, `custom-data`)
+
+### ภารกิจที่ 2: ผังลำดับการคืนหน่วยความจำ Bluetooth (BLE Lifecycle & Memory Reclaim Flow)
+ให้นักศึกษาวาด Flowchart / Sequence แสดงว่า:
+1. การเชื่อมต่อ BLE ถูกตรวจพบผ่าน Event `PROTOCOMM_TRANSPORT_BLE_CONNECTED` (LED 2 กระพริบเร็ว 100ms)
+2. เมื่อเชื่อมต่อ Wi-Fi สำเร็จ (`WIFI_PROV_CRED_SUCCESS`) $\rightarrow$ เกิด Event `WIFI_PROV_END`
+3. Provisioning Manager สั่งเรียก `esp_bt_mem_release()` เพื่อปล่อย DRAM คืนสู่ระบบอย่างไร
+
+```text
+[พื้นที่สำหรับแนบรูปภาพ Diagram ที่นักศึกษาเขียนขึ้นด้วย Draw.io / Mermaid / วาดมือ]
+```
+
+---
+
+## 6. ตารางบันทึกผลการทดลอง (Experiment Results)
+
+| รายการตรวจสอบ | ผลการทดลอง / ข้อมูลที่สังเกตได้ |
+| :--- | :--- |
+| **1. BLE Device Name ที่สแกนเจอ** | `PROV_`.............................. |
+| **2. Primary Service UUID (128-bit)** | ..................................................... |
+| **3. Characteristic Endpoint ที่พบ (0x2901)** | 1. ..................................................<br/>2. ..................................................<br/>3. .................................................. |
+| **4. พฤติกรรมไฟ LED 2 (GPIO 4) ช่วงรอ vs ช่วงต่อ BLE** | ช่วงรอ: .......................................<br/>ช่วงต่อ: ....................................... |
+| **5. พฤติกรรมเมื่อต่อ Wi-Fi สำเร็จ** | มี Log คืนหน่วยความจำ Bluetooth หรือไม่? (มี / ไม่มี) |
+
+---
+
+## 7. คำถามท้ายการทดลอง (Post-Lab Questions)
+1. เหตุใด BLE Provisioning จึงไม่ส่งผลให้สัญญาณ Wi-Fi บนสมาร์ตโฟนของผู้ใช้หลุดระหว่างทำรายการ?
+2. Descriptor `0x2901` มีความสำคัญอย่างไรต่อการที่แอปพลิเคชันมือถือจะทราบว่า Characteristic แต่ละตัวใช้ทำหน้าที่อะไร?
+3. การที่ ESP-IDF มีฟังก์ชัน `esp_bt_mem_release()` มีประโยชน์อย่างไรต่อการทำงานของแอปพลิเคชัน IoT หลังเชื่อมต่อ Wi-Fi สำเร็จ?
+
+Log
+```text
+
+```
+
+---
+
+## 09-Labsheet-07-4-Security-Schemes-and-Custom-Data
+
+## 6. กิจกรรมถอดรหัสซอร์สโค้ดและเขียนผังงาน (Code Deconstruction & Security Flow Assignment)
+
+ให้นักศึกษาแกะรอยการทำงานด้านความปลอดภัยและ Custom Handler ใน `main/main.c` แล้วเขียน **ผังการไหลของข้อมูล (Data Flow & Cryptographic Handshake Flow)**:
+
+### ภารกิจที่ 1: ผังขั้นตอนการตรวจสอบ PoP (Security Handshake Decision Flow)
+ให้นักศึกษาวาด Flowchart แสดงการแลกเปลี่ยนคีย์และตรวจสอบสิทธิ์:
+1. การสร้าง Session Parameters ด้วยค่า PoP (`abcd1234`)
+2. เมื่อ Client ส่ง Public Key + Verification Hash มาให้ ESP32
+3. จุดแยกทางเลือก (Branching):
+   - หาก PoP ไม่ตรง $\rightarrow$ Trigger Event `PROTOCOMM_SECURITY_SESSION_CREDENTIALS_MISMATCH` และปฏิเสธการเชื่อมต่อ
+   - หาก PoP ถูกต้อง $\rightarrow$ Trigger Event `PROTOCOMM_SECURITY_SESSION_SETUP_OK` และสร้าง AES Session Key สำเร็จ
+
+### ภารกิจที่ 2: ผังการรับส่งข้อมูลผ่าน Custom Endpoint (Custom Data Handler Flow)
+ให้นักศึกษาวาด Sequence / Data Flow ของฟังก์ชัน `custom_prov_data_handler()`:
+1. ข้อมูล `inbuf` ถูกส่งเข้ามาจากสมาร์ตโฟนผ่าน Protocomm
+2. การพิมพ์ข้อความ Log ด้วย `ESP_LOGI()`
+3. การจัดสรรหน่วยความจำแบบไดนามิกด้วย `strdup()` ให้กับ `*outbuf`
+4. ทำไมตัวแปร `*outbuf` จึงต้องจัดสรรใน Heap Memory (ทำไมจึงใช้ตัวแปร Local Static Array ธรรมดาไม่ได้)?
+
+```text
+[พื้นที่สำหรับแนบรูปภาพ Diagram ที่นักศึกษาเขียนขึ้นด้วย Draw.io / Mermaid / วาดมือ]
+```
+
+---
+
+## 7. ตารางบันทึกผลการทดลอง (Experiment Results)
+
+| สถานการณ์ทดสอบ | ค่า PoP ที่ป้อน | ผลลัพธ์บนแอปมือถือ | ข้อความ Log ใน Serial Monitor |
+| :--- | :--- | :--- | :--- |
+| **1. ป้อน PoP ผิดพลาด** | `wrong1234` | | |
+| **2. ป้อน PoP ถูกต้อง** | `abcd1234` | | |
+| **3. ส่ง Custom Data** | `TEST_DATA_999` | | |
+
+---
+
+## 8. คำถามท้ายการทดลอง (Post-Lab Questions)
+1. การใช้ **Proof-of-Possession (PoP)** ช่วยป้องกันการโจมตีประเภทใดได้บ้าง?
+2. หากไม่มีการใช้ PoP (เช่น ใน Security 0) ผู้โจมตีที่อยู่ในรัศมีสัญญาณบลูทูธสามารถทำสิ่งใดกับอุปกรณ์ได้บ้าง?
+3. ในการประยุกต์ใช้งานเชิงพาณิชย์จริง เราสามารถนำ **Custom Data Endpoint** ไปใช้ส่งข้อมูลประเภทใดได้อีกบ้าง (ยกตัวอย่าง 2 กรณี)?
+4. ในฟังก์ชัน `custom_prov_data_handler()` เหตุใดหน่วยความจำที่จัดสรรให้ `*outbuf` จึงถูก Free โดย Protocomm Layer อัตโนมัติหลังจากส่งข้อมูลเสร็จ?
+
+Log
+```text
+
+```
+
+---

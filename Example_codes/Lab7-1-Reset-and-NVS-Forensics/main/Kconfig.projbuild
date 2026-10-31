@@ -1,0 +1,10 @@
+menu "Example Configuration"
+ 
+    config EXAMPLE_RESET_PROVISIONED
+        bool "Reset Provisioned state (Erase credentials)"
+        default n
+        help
+            Erase Wi-Fi provisioning credentials
+            every time the device boots.
+ 
+endmenu
