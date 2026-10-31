@@ -1,38 +1,25 @@
 รายงานผลการทดลองสัปดาห์ที่ 7: Wi-Fi Provisioning
 รหัสนักศึกษา: 67030249 ชื่อ-นามสกุล: นางสาวสุวิมล ศรีประไหม (Suwimon Sripramai) โต๊ะปฏิบัติการ: โต๊ะที่ 1 บอร์ดทดลอง: ESP32 (ESP32-D0WD-V3) | MAC Address: 24:0A:C4:02:49:D4
 
-
+________________________________________
 Lab 7.1: การศึกษากลไก Reset Provisioning 3 รูปแบบ และ NVS Memory Forensics
 ตารางบันทึกผลการทดลอง
-รูปแบบการ Reset
-คำสั่ง / พฤติกรรมที่ทำ
-พฤติกรรมของ LED แต่ละดวงหลังเปิดเครื่อง
-สถานะใน Serial Monitor
-1. CLI Erase
-idf.py erase-flash
-LED 1 ดับสนิท (เข้าสู่โหมดรอ Provisioning)
-[STATUS]: Device is NOT provisioned (NVS is empty)
-2. Menuconfig Flag
-CONFIG_EXAMPLE_RESET_PROVISIONED=y
-LED 1 ดับสนิท (เข้าสู่โหมดรอ Provisioning)
-[MENUCONFIG]: Resetting provisioned state due to build flag!
-3. Hardware Button (GPIO 18)
-กดปุ่ม GPIO 18 ค้าง 3 วินาที
-LED 1 ดับสนิท (เข้าสู่โหมดรอ Provisioning)
->>> FACTORY RESET TRIGGERED! ERASING NVS FLASH <<<
-
+รูปแบบการ Reset	คำสั่ง / พฤติกรรมที่ทำ	พฤติกรรมของ LED แต่ละดวงหลังเปิดเครื่อง	สถานะใน Serial Monitor
+1. CLI Erase	idf.py erase-flash	LED 1 ดับสนิท (เข้าสู่โหมดรอ Provisioning)	[STATUS]: Device is NOT provisioned (NVS is empty)
+2. Menuconfig Flag	CONFIG_EXAMPLE_RESET_PROVISIONED=y	LED 1 ดับสนิท (เข้าสู่โหมดรอ Provisioning)	[MENUCONFIG]: Resetting provisioned state due to build flag!
+3. Hardware Button (GPIO 18)	กดปุ่ม GPIO 18 ค้าง 3 วินาที	LED 1 ดับสนิท (เข้าสู่โหมดรอ Provisioning)	>>> FACTORY RESET TRIGGERED! ERASING NVS FLASH <<<
 คำถามท้ายการทดลอง
-เพราะเหตุใดการกดปุ่ม BOOT (GPIO 0) ค้างไว้ในจังหวะรีเซ็ตบอร์ด จึงทำให้โปรแกรมค้างอยู่ที่ ROM Bootloader และไม่ยอมทำงานต่อ?
-ตอบ: ในขั้นตอน Bootstrapping ตัวประมวลผล ROM จะตรวจสอบระดับแรงดันบนขา Strapping Pins ทันที การกดปุ่ม BOOT (GPIO 0) ค้างไว้จะส่งผลให้ค่าบิตสถานะการบูตเข้าสู่ Serial Flasher Stub ทำให้ ESP32 รันโปรแกรมใน ROM รอการสื่อสาร Serial แทนการอ่านพาร์ติชันแอพพลิเคชัน
-เพราะเหตุใดคำสั่ง idf.py erase-flash จึงทำให้ข้อมูลเฟิร์มแวร์ Application หายไปด้วย ในขณะที่ nvs_flash_erase() ไม่ทำให้เฟิร์มแวร์หาย?
-ตอบ: เพราะ idf.py erase-flash ส่งคำสั่งระดับฮาร์ดแวร์เพื่อเคลียร์ Flash Memory ทั้งหมดให้กลับเป็นค่า 0xFF ทุกตำแหน่ง แต่ nvs_flash_erase() สั่งงานจากเฟิร์มแวร์ที่รันอยู่บน ESP32 ให้ฟอร์แมตเฉพาะพื้นที่จัดเก็บ Key-Value Pair ของ NVS จึงไม่มีผลกระทบต่อเฟิร์มแวร์หลัก
-การออกแบบปุ่ม Factory Reset บนอุปกรณ์ IoT เชิงพาณิชย์ เหตุใดจึงต้องกำหนดให้ผู้ใช้กดปุ่มค้างไว้ 3-5 วินาที แทนที่จะสั่งลบข้อมูลทันทีที่แตะปุ่มเพียงเสี้ยววินาที?
-ตอบ: เพื่อป้องกันปัญหา False Trigger จากการสัมผัสปุ่มโดยไม่ได้ตั้งใจ และป้องกันสัญญาณรบกวนทางไฟฟ้าในวงจร นอกจากนี้การกดค้าง 3 วินาทียังเปิดโอกาสให้อุปกรณ์สามารถส่งสัญญาณไฟ LED กระพริบเตือนผู้ใช้ล่วงหน้าก่อนจะเริ่มกระบวนการลบ NVS Flash จริง
-หากอุปกรณ์ IoT ถูกติดตั้งอยู่บนเสาสูงหรือฝังอยู่ในผนัง วิธีการ Reset ทางกายภาพรูปแบบใดเหมาะสมที่สุด?
-ตอบ: การรีเซ็ตผ่านวงจรจ่ายไฟ (Power-Interrupt Pattern) โดยการสับสวิตช์ไฟไป-มาตามจำนวนครั้งที่กำหนด เฟิร์มแวร์จะอาศัยตัวแปรนับรอบใน NVS หรือ RTC Fast Memory เพื่อตัดสินใจสั่งล้างค่า หรืออีกทางเลือกคือการใช้เซนเซอร์แม่เหล็ก (Reed Switch / Hall Effect Sensor) แตะผ่านผนัง
+1.	เพราะเหตุใดการกดปุ่ม BOOT (GPIO 0) ค้างไว้ในจังหวะรีเซ็ตบอร์ด จึงทำให้โปรแกรมค้างอยู่ที่ ROM Bootloader และไม่ยอมทำงานต่อ?
+-	ตอบ: ในขั้นตอน Bootstrapping ตัวประมวลผล ROM จะตรวจสอบระดับแรงดันบนขา Strapping Pins ทันที การกดปุ่ม BOOT (GPIO 0) ค้างไว้จะส่งผลให้ค่าบิตสถานะการบูตเข้าสู่ Serial Flasher Stub ทำให้ ESP32 รันโปรแกรมใน ROM รอการสื่อสาร Serial แทนการอ่านพาร์ติชันแอพพลิเคชัน
+2.	เพราะเหตุใดคำสั่ง idf.py erase-flash จึงทำให้ข้อมูลเฟิร์มแวร์ Application หายไปด้วย ในขณะที่ nvs_flash_erase() ไม่ทำให้เฟิร์มแวร์หาย?
+-	ตอบ: เพราะ idf.py erase-flash ส่งคำสั่งระดับฮาร์ดแวร์เพื่อเคลียร์ Flash Memory ทั้งหมดให้กลับเป็นค่า 0xFF ทุกตำแหน่ง แต่ nvs_flash_erase() สั่งงานจากเฟิร์มแวร์ที่รันอยู่บน ESP32 ให้ฟอร์แมตเฉพาะพื้นที่จัดเก็บ Key-Value Pair ของ NVS จึงไม่มีผลกระทบต่อเฟิร์มแวร์หลัก
+3.	การออกแบบปุ่ม Factory Reset บนอุปกรณ์ IoT เชิงพาณิชย์ เหตุใดจึงต้องกำหนดให้ผู้ใช้กดปุ่มค้างไว้ 3-5 วินาที แทนที่จะสั่งลบข้อมูลทันทีที่แตะปุ่มเพียงเสี้ยววินาที?
+-	ตอบ: เพื่อป้องกันปัญหา False Trigger จากการสัมผัสปุ่มโดยไม่ได้ตั้งใจ และป้องกันสัญญาณรบกวนทางไฟฟ้าในวงจร นอกจากนี้การกดค้าง 3 วินาทียังเปิดโอกาสให้อุปกรณ์สามารถส่งสัญญาณไฟ LED กระพริบเตือนผู้ใช้ล่วงหน้าก่อนจะเริ่มกระบวนการลบ NVS Flash จริง
+4.	หากอุปกรณ์ IoT ถูกติดตั้งอยู่บนเสาสูงหรือฝังอยู่ในผนัง วิธีการ Reset ทางกายภาพรูปแบบใดเหมาะสมที่สุด?
+-	ตอบ: การรีเซ็ตผ่านวงจรจ่ายไฟ (Power-Interrupt Pattern) โดยการสับสวิตช์ไฟไป-มาตามจำนวนครั้งที่กำหนด เฟิร์มแวร์จะอาศัยตัวแปรนับรอบใน NVS หรือ RTC Fast Memory เพื่อตัดสินใจสั่งล้างค่า หรืออีกทางเลือกคือการใช้เซนเซอร์แม่เหล็ก (Reed Switch / Hall Effect Sensor) แตะผ่านผนัง
 กิจกรรมถอดรหัสซอร์สโค้ดและเขียนผังงาน (Code Deconstruction & Flowchart Assignment)
 ภารกิจที่ 1: ผังงานการตัดสินใจช่วง Bootstrapping & Reset Decision
-flowchart TD
+flowchart TD
     Start(["เริ่มทำงาน app_main() - 67030249"]) --> CheckButton{"กดปุ่ม GPIO 18 ค้าง >= 3 วินาที?"}
     
     CheckButton -- ใช่ --> EraseNVS["สั่ง nvs_flash_erase() ล้างพาร์ติชัน NVS"]
@@ -46,8 +33,8 @@ flowchart TD
     CheckConfig -- ไม่ใช่ --> CheckNVS{"wifi_prov_mgr_is_provisioned() == true?"}
     CheckNVS -- ใช่ --> StartSTA["เริ่มการทำงาน Wi-Fi Station ทันที (LED 1 ติดสว่าง)"]
     CheckNVS -- ไม่ใช่ --> InitProv
-ภารกิจที่ 2: ผังสถานะการเปลี่ยนจังหวะไฟ LED 1 (Wi-Fi STA Indicator)
-stateDiagram-v2
+ภารกิจที่ 2: ผังสถานะการเปลี่ยนจังหวะไฟ LED 1 (Wi-Fi STA Indicator)
+stateDiagram-v2
     [*] --> LED_STA_MODE_DISCONNECTED: เริ่มต้นระบบ / ยังไม่ได้รับ IP
     
     LED_STA_MODE_DISCONNECTED --> LED_STA_MODE_CONNECTED: เชื่อมต่อ Wi-Fi สำเร็จและได้รับ IP (IP_EVENT_STA_GOT_IP)
@@ -61,8 +48,8 @@ stateDiagram-v2
     state LED_STA_MODE_CONNECTED {
         [*] --> ติดสว่างค้าง: ได้รับ IP (192.168.1.149) พร้อมส่งข้อมูล
     }
-บันทึก Log การทำงาน (Lab 7.1 - Hardware Reset)
-rst:0x1 (POWERON_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)
+บันทึก Log การทำงาน (Lab 7.1 - Hardware Reset)
+rst:0x1 (POWERON_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)
 configsip: 0, SPIWP:0xee
 clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
 mode:DIO, clock div:2
@@ -124,37 +111,29 @@ configsip: 0, SPIWP:0xee
 I (440) LAB7_1_RESET: Checking Provisioning State...
 W (445) LAB7_1_RESET: [STATUS]: Device is NOT provisioned (NVS is empty)
 I (451) LAB7_1_RESET: LED 1 is OFF. System ready for Wi-Fi Provisioning.
-
-
+
+________________________________________
 Lab 7.2: SoftAP Provisioning and HTTP Sniffing
 ตารางบันทึกผลการทดลอง
-รายการตรวจสอบ
-ค่าที่บันทึกได้จากการทดลอง
-1. ชื่อ SoftAP SSID ของ ESP32
-PROV_0249D4
-2. รหัส PoP (Proof of Possession)
-abcd1234
-3. ข้อความใน QR Code Payload (JSON)
-{"ver":"v1","name":"PROV_0249D4","pop":"abcd1234","transport":"softap"}
-4. พฤติกรรมไฟ LED 3 (GPIO 5) ช่วงรอ vs ช่วงส่งข้อมูล
-ช่วงรอ: สว่างค้าง (บ่งบอกว่าเปิด SoftAP รอรับข้อมูลอยู่)
+รายการตรวจสอบ	ค่าที่บันทึกได้จากการทดลอง
+1. ชื่อ SoftAP SSID ของ ESP32	PROV_0249D4
+2. รหัส PoP (Proof of Possession)	abcd1234
+3. ข้อความใน QR Code Payload (JSON)	{"ver":"v1","name":"PROV_0249D4","pop":"abcd1234","transport":"softap"}
+4. พฤติกรรมไฟ LED 3 (GPIO 5) ช่วงรอ vs ช่วงส่งข้อมูล	ช่วงรอ: สว่างค้าง (บ่งบอกว่าเปิด SoftAP รอรับข้อมูลอยู่)
 
 ช่วงส่ง: ดับลงเมื่อเชื่อมต่อ Wi-Fi และได้ IP สำเร็จ
-5. IP Address ที่ ESP32 ได้รับจาก Router
-192.168.1.149
-6. เวลาที่ใช้ตั้งแต่เริ่มจนจบกระบวนการ (วินาที)
-7.9 วินาที (นับจากตอนกดยืนยันบนแอป)
-
+5. IP Address ที่ ESP32 ได้รับจาก Router	192.168.1.149
+6. เวลาที่ใช้ตั้งแต่เริ่มจนจบกระบวนการ (วินาที)	7.9 วินาที (นับจากตอนกดยืนยันบนแอป)
 คำถามท้ายการทดลอง
-ในโหมด SoftAP Scheme สมาร์ตโฟนส่งข้อมูลหา ESP32 ผ่านโปรโตคอลและ IP Address ใด?
-ตอบ: ใช้การสื่อสารแบบ HTTP POST Request ไปยัง IP 192.168.4.1 ผ่านช่องทาง Protocomm Endpoints (เช่น /prov-session, /prov-config)
-หากผู้ใช้ป้อนรหัสผ่าน Wi-Fi ผิดในแอปมือถือ จะเกิด Event ใดขึ้นบน ESP32 (WIFI_PROV_CRED_FAIL หรือไม่) และ ESP32 มีพฤติกรรมอย่างไร?
-ตอบ: ระบบจะเข้าสู่สถานะ WIFI_PROV_CRED_FAIL โดยไฟ LED 3 แสดงสถานะ SoftAP จะยังคงสว่างค้าง และบอร์ดจะรอรับคำสั่ง Config ชุดใหม่จากแอปมือถือโดยไม่ปิด Access Point
-ทำไมผู้ผลิต IoT ส่วนใหญ่จึงมองว่ากระบวนการเชื่อมต่อแบบ SoftAP มีขั้นตอนที่ยุ่งยากสำหรับผู้ใช้ทั่วไปเมื่อเทียบกับ BLE?
-ตอบ: SoftAP ก่อให้เกิดปัญหาเรื่อง Captive Network Detection บนสมาร์ตโฟนรุ่นใหม่ๆ ที่จะแจ้งเตือนว่า 'No Internet Access' และตัดการเชื่อมต่อกลับไปใช้ Cellular Data โดยอัตโนมัติ ทำให้กระบวนการ Provisioning ล้มเหลวได้ง่ายกว่าการใช้สัญญาณ BLE
+1.	ในโหมด SoftAP Scheme สมาร์ตโฟนส่งข้อมูลหา ESP32 ผ่านโปรโตคอลและ IP Address ใด?
+-	ตอบ: ใช้การสื่อสารแบบ HTTP POST Request ไปยัง IP 192.168.4.1 ผ่านช่องทาง Protocomm Endpoints (เช่น /prov-session, /prov-config)
+2.	หากผู้ใช้ป้อนรหัสผ่าน Wi-Fi ผิดในแอปมือถือ จะเกิด Event ใดขึ้นบน ESP32 (WIFI_PROV_CRED_FAIL หรือไม่) และ ESP32 มีพฤติกรรมอย่างไร?
+-	ตอบ: ระบบจะเข้าสู่สถานะ WIFI_PROV_CRED_FAIL โดยไฟ LED 3 แสดงสถานะ SoftAP จะยังคงสว่างค้าง และบอร์ดจะรอรับคำสั่ง Config ชุดใหม่จากแอปมือถือโดยไม่ปิด Access Point
+3.	ทำไมผู้ผลิต IoT ส่วนใหญ่จึงมองว่ากระบวนการเชื่อมต่อแบบ SoftAP มีขั้นตอนที่ยุ่งยากสำหรับผู้ใช้ทั่วไปเมื่อเทียบกับ BLE?
+-	ตอบ: SoftAP ก่อให้เกิดปัญหาเรื่อง Captive Network Detection บนสมาร์ตโฟนรุ่นใหม่ๆ ที่จะแจ้งเตือนว่า 'No Internet Access' และตัดการเชื่อมต่อกลับไปใช้ Cellular Data โดยอัตโนมัติ ทำให้กระบวนการ Provisioning ล้มเหลวได้ง่ายกว่าการใช้สัญญาณ BLE
 กิจกรรมถอดรหัสซอร์สโค้ดและเขียนผังงาน (Code Deconstruction & Sequence Flow Assignment)
 ภารกิจที่ 1: ผังลำดับการสื่อสารผ่าน HTTP Endpoints (SoftAP Scheme Sequence Flow)
-sequenceDiagram
+sequenceDiagram
     autonumber
     participant App as Mobile App (Provisioner)
     participant ESP as ESP32 (PROV_0249D4: 192.168.4.1)
@@ -171,8 +150,8 @@ sequenceDiagram
     Router-->>ESP: อนุมัติการเชื่อมต่อและแจก IP (192.168.1.149)
     ESP->>App: ส่งสถานะยืนยันการเชื่อมต่อสำเร็จ (WIFI_PROV_CRED_SUCCESS)
     ESP->>ESP: ปิดบริการ SoftAP และดับไฟ LED 3
-บันทึก Log การทำงาน (Lab 7.2 - SoftAP Provisioning)
-I (555787) LAB7_2_SOFTAP: =================================================
+บันทึก Log การทำงาน (Lab 7.2 - SoftAP Provisioning)
+I (555787) LAB7_2_SOFTAP: =================================================
 I (555787) LAB7_2_SOFTAP:  LAB 7.2: SOFTAP PROVISIONING VIA HTTP
 I (555797) LAB7_2_SOFTAP:  Student ID: 67030249 | MAC: 24:0A:C4:02:49:D4
 I (555807) LAB7_2_SOFTAP: =================================================
@@ -208,39 +187,32 @@ I (130100) esp_netif_handlers: sta ip: 192.168.1.149, mask: 255.255.255.0, gw: 1
 I (130110) LAB7_2_SOFTAP: [SUCCESS]: Provisioning Completed in 7.9s! IP: 192.168.1.149
 I (130120) LAB7_2_SOFTAP: Turning OFF LED 3. De-initializing Provisioning Manager.
 I (130130) wifi_prov_mgr: Provisioning Manager de-initialized.
-
-
+
+________________________________________
 Lab 7.3: BLE Provisioning and GATT Forensics
 ตารางบันทึกผลการทดลอง
-รายการตรวจสอบ
-ผลการทดลอง / ข้อมูลที่สังเกตได้
-1. BLE Device Name ที่สแกนเจอ
-PROV_0249D4
-2. Primary Service UUID (128-bit)
-021A9004-0382-4AEA-BFF4-6B3F1C5ADFB4
-3. Characteristic Endpoint ที่พบ (0x2901)
-1. 021AFF50-0382-4AEA-BFF4-6B3F1C5ADFB4 (prov-session)
+รายการตรวจสอบ	ผลการทดลอง / ข้อมูลที่สังเกตได้
+1. BLE Device Name ที่สแกนเจอ	PROV_0249D4
+2. Primary Service UUID (128-bit)	021A9004-0382-4AEA-BFF4-6B3F1C5ADFB4
+3. Characteristic Endpoint ที่พบ (0x2901)	1. 021AFF50-0382-4AEA-BFF4-6B3F1C5ADFB4 (prov-session)
 2. 021AFF51-0382-4AEA-BFF4-6B3F1C5ADFB4 (prov-config)
 3. 021AFF52-0382-4AEA-BFF4-6B3F1C5ADFB4 (prov-scan)
 
 4. 021AFF53-0382-4AEA-BFF4-6B3F1C5ADFB4 (proto-ver)
-4. พฤติกรรมไฟ LED 2 (GPIO 4) ช่วงรอ vs ช่วงต่อ BLE
-ช่วงรอ: สว่างค้าง (บ่งบอกว่าบอร์ดกำลังเปิด BLE Advertising)
+4. พฤติกรรมไฟ LED 2 (GPIO 4) ช่วงรอ vs ช่วงต่อ BLE	ช่วงรอ: สว่างค้าง (บ่งบอกว่าบอร์ดกำลังเปิด BLE Advertising)
 
 ช่วงต่อ: ดับลงเมื่อ Provisioning สำเร็จ
-5. พฤติกรรมเมื่อต่อ Wi-Fi สำเร็จ
-มี (ปรากฏ Log wifi_prov_scheme_ble: BTDM memory released: 27304 bytes)
-
+5. พฤติกรรมเมื่อต่อ Wi-Fi สำเร็จ	มี (ปรากฏ Log wifi_prov_scheme_ble: BTDM memory released: 27304 bytes)
 คำถามท้ายการทดลอง
-เหตุใด BLE Provisioning จึงไม่ส่งผลให้สัญญาณ Wi-Fi บนสมาร์ตโฟนของผู้ใช้หลุดระหว่างทำรายการ?
-ตอบ: เพราะการส่งข้อมูลทำผ่านช่องทาง Bluetooth Low Energy ซึ่งไม่รบกวนอินเทอร์เฟซ Wi-Fi ของสมาร์ตโฟน ส่งผลให้สมาร์ตโฟนสามารถเชื่อมต่ออินเทอร์เน็ตได้ตามปกติและติดต่อกับ Cloud ได้ในเวลาเดียวกัน
-Descriptor 0x2901 มีความสำคัญอย่างไรต่อการที่แอปพลิเคชันมือถือจะทราบว่า Characteristic แต่ละตัวใช้ทำหน้าที่อะไร?
-ตอบ: มีความสำคัญในการระบุบทบาทของแต่ละ Characteristic ผ่านข้อความ ASCII เช่น ระบุว่า UUID นี้คือช่องทาง 'prov-session' หรือ 'prov-config' ช่วยลดความผิดพลาดในการส่งข้อมูลผิดท่อในระดับแอปพลิเคชัน
-การที่ ESP-IDF มีฟังก์ชัน esp_bt_mem_release() มีประโยชน์อย่างไรต่อการทำงานของแอปพลิเคชัน IoT หลังเชื่อมต่อ Wi-Fi สำเร็จ?
-ตอบ: ช่วยบริหารจัดการทรัพยากรหน่วยความจำอย่างมีประสิทธิภาพสูงสุด เพราะบลูทูธใช้เฉพาะตอนตั้งค่าเริ่มต้นเท่านั้น เมื่อได้ Wi-Fi แล้วการปล่อย RAM ของบลูทูธคืนให้ระบบจะทำให้มีพื้นที่สำหรับสร้าง Dynamic Buffer ในการรับส่งข้อมูล IoT
+1.	เหตุใด BLE Provisioning จึงไม่ส่งผลให้สัญญาณ Wi-Fi บนสมาร์ตโฟนของผู้ใช้หลุดระหว่างทำรายการ?
+-	ตอบ: เพราะการส่งข้อมูลทำผ่านช่องทาง Bluetooth Low Energy ซึ่งไม่รบกวนอินเทอร์เฟซ Wi-Fi ของสมาร์ตโฟน ส่งผลให้สมาร์ตโฟนสามารถเชื่อมต่ออินเทอร์เน็ตได้ตามปกติและติดต่อกับ Cloud ได้ในเวลาเดียวกัน
+2.	Descriptor 0x2901 มีความสำคัญอย่างไรต่อการที่แอปพลิเคชันมือถือจะทราบว่า Characteristic แต่ละตัวใช้ทำหน้าที่อะไร?
+-	ตอบ: มีความสำคัญในการระบุบทบาทของแต่ละ Characteristic ผ่านข้อความ ASCII เช่น ระบุว่า UUID นี้คือช่องทาง 'prov-session' หรือ 'prov-config' ช่วยลดความผิดพลาดในการส่งข้อมูลผิดท่อในระดับแอปพลิเคชัน
+3.	การที่ ESP-IDF มีฟังก์ชัน esp_bt_mem_release() มีประโยชน์อย่างไรต่อการทำงานของแอปพลิเคชัน IoT หลังเชื่อมต่อ Wi-Fi สำเร็จ?
+-	ตอบ: ช่วยบริหารจัดการทรัพยากรหน่วยความจำอย่างมีประสิทธิภาพสูงสุด เพราะบลูทูธใช้เฉพาะตอนตั้งค่าเริ่มต้นเท่านั้น เมื่อได้ Wi-Fi แล้วการปล่อย RAM ของบลูทูธคืนให้ระบบจะทำให้มีพื้นที่สำหรับสร้าง Dynamic Buffer ในการรับส่งข้อมูล IoT
 กิจกรรมถอดรหัสซอร์สโค้ดและเขียนผังงาน (Code Deconstruction & BLE GATT Architecture Assignment)
 ภารกิจที่ 1: ผังโครงสร้าง GATT Tree & Endpoint Mapping
-graph TD
+graph TD
     Service["Primary Service UUID<br/>021A9004-0382-4AEA-BFF4-6B3F1C5ADFB4"]
     
     Char1["Characteristic: prov-session<br/>UUID: ...FF50 (Descriptor 0x2901: 'prov-session')"]
@@ -252,8 +224,8 @@ graph TD
     Service --> Char2
     Service --> Char3
     Service --> Char4
-ภารกิจที่ 2: ผังลำดับการคืนหน่วยความจำ Bluetooth (BLE Lifecycle & Memory Reclaim Flow)
-sequenceDiagram
+ภารกิจที่ 2: ผังลำดับการคืนหน่วยความจำ Bluetooth (BLE Lifecycle & Memory Reclaim Flow)
+sequenceDiagram
     autonumber
     participant ESP as ESP32 Provisioning Manager
     participant BT as Bluetooth Controller (NimBLE)
@@ -265,9 +237,9 @@ sequenceDiagram
     BT->>Heap: ปลดปล่อยบล็อกหน่วยความจำ BSS/Data (27304 bytes)
     Note over Heap: ได้รับ RAM คืนสู่ระบบ ~26-27 KB<br/>(Free Heap เพิ่มขึ้นสำหรับรัน MQTT/Application)
     ESP->>ESP: สลับการทำงานไปรันโปรแกรมหลัก Wi-Fi Station ถาวร
-บันทึก Log การทำงาน (Lab 7.3 - BLE Provisioning)
+บันทึก Log การทำงาน (Lab 7.3 - BLE Provisioning)
 1. Log จากตัวบอร์ด ESP32 (Terminal)
-entry 0x40080640
+entry 0x40080640
 I (31) boot: ESP-IDF v5.2.3 2nd stage bootloader
 I (31) boot: compile time Oct 31 2026 04:18:22
 I (32) boot: chip revision: v3.1
@@ -305,8 +277,8 @@ I (47090) wifi_prov_scheme_ble: Stopping BLE Advertising and Disconnecting GATT
 I (47120) wifi_prov_scheme_ble: BTDM memory released: 27304 bytes returned to System Heap!
 I (47130) wifi_prov_mgr: Provisioning Manager de-initialized.
 I (47140) LAB7_3_BLE: Free Heap after BT release: 304,812 bytes (Healthy).
-2. Log จากแอป nRF Connect (สมาร์ตโฟน)
-[10:19:10.054] Normal: Scanner Started (Filter: 'PROV_').
+2. Log จากแอป nRF Connect (สมาร์ตโฟน)
+[10:19:10.054] Normal: Scanner Started (Filter: 'PROV_').
 [10:19:10.077] Normal: Device Discovered: 'PROV_0249D4', RSSI: -50 dBm, Connectable: true.
 [10:19:19.645] Normal: Connecting to 'PROV_0249D4' (24:0A:C4:02:49:D4)...
 [10:19:19.757] Normal: Connected. MTU set to 512.
@@ -330,12 +302,12 @@ I (47140) LAB7_3_BLE: Free Heap after BT release: 304,812 bytes (Healthy).
 [10:19:24.450] Normal: Session Auth SUCCESS!
 [10:19:27.100] Normal: Wi-Fi Config Applied. Target AP: 'IoT-Lab-Table-1'.
 [10:19:29.800] Normal: Device Disconnected (ESP32 released BLE controller).
-
-
+
+________________________________________
 Lab 7.4: Security Schemes and Custom Data Endpoint
 กิจกรรมถอดรหัสซอร์สโค้ดและเขียนผังงาน (Code Deconstruction & Security Flow Assignment)
 ภารกิจที่ 1: ผังขั้นตอนการตรวจสอบ PoP (Security Handshake Decision Flow)
-flowchart TD
+flowchart TD
     Start(["แอปมือถือส่ง Key Exchange + PoP"]) --> CheckPoP{"PoP ตรงกับ 'abcd1234' หรือไม่?"}
     
     CheckPoP -- ไม่ตรง (wrong1234) --> Fail["Trigger Event: PROTOCOMM_SECURITY_SESSION_CREDENTIALS_MISMATCH"]
@@ -345,8 +317,8 @@ flowchart TD
     CheckPoP -- ตรง (abcd1234) --> Success["Trigger Event: PROTOCOMM_SECURITY_SESSION_SETUP_OK"]
     Success --> Establish["สร้าง AES-CTR Shared Secret Key สำเร็จ"]
     Establish --> OpenChannel["เปิดอนุญาตรับส่งข้อมูลผ่าน Custom Endpoint"]
-ภารกิจที่ 2: ผังการรับส่งข้อมูลผ่าน Custom Endpoint (Custom Data Handler Flow)
-sequenceDiagram
+ภารกิจที่ 2: ผังการรับส่งข้อมูลผ่าน Custom Endpoint (Custom Data Handler Flow)
+sequenceDiagram
     autonumber
     participant App as Mobile App
     participant Handler as custom_prov_data_handler
@@ -359,10 +331,10 @@ sequenceDiagram
     Handler-->>Protocomm: ส่งมอบพอยน์เตอร์ *outbuf ({"status": "OK", "ack_id": "ACK_67030249_04", "msg": "Telemetry config applied"})
     Protocomm->>App: เข้ารหัส AES-CTR และส่ง Response ตอบกลับมือถือ
     Protocomm->>Protocomm: สั่ง free(*outbuf) คืนหน่วยความจำ Heap อัตโนมัติ
-บันทึก Log การทดลอง (Terminal)
+บันทึก Log การทดลอง (Terminal)
 กรณีป้อน PoP ผิดพลาด (wrong1234):
 
-E (331747) security1: Key mismatch. Close connection
+E (331747) security1: Key mismatch. Close connection
 E (331747) security1: Session setup error -1
 E (331747) protocomm_nimble: Invalid content received on endpoint 'prov-session'
 E (331757) LAB7_4_CUSTOM: --------------------------------------------------
@@ -370,10 +342,10 @@ E (331757) LAB7_4_CUSTOM: [SECURITY ALERT]: INVALID PoP / Unauthorized Access!
 E (331767) LAB7_4_CUSTOM: Student ID: 67030249 | Device: PROV_0249D4
 E (331777) LAB7_4_CUSTOM: Rejecting session setup request (Key verification failed)
 E (331787) LAB7_4_CUSTOM: --------------------------------------------------
-
+
 กรณีป้อน PoP ถูกต้อง (abcd1234):
 
-I (372007) LAB7_4_CUSTOM: --------------------------------------------------
+I (372007) LAB7_4_CUSTOM: --------------------------------------------------
 I (372007) LAB7_4_CUSTOM: [SECURITY SUCCESS]: Valid PoP ('abcd1234')! Secured Session OK!
 I (372017) LAB7_4_CUSTOM: Student ID: 67030249 | Station Table 1
 I (372027) LAB7_4_CUSTOM: --------------------------------------------------
@@ -382,30 +354,17 @@ I (372047) LAB7_4_CUSTOM: [CUSTOM DATA RECEIVED]: {"user_id": "67030249", "devic
 I (372057) LAB7_4_CUSTOM: Allocating Heap Buffer (len: 80) for Response...
 I (372067) LAB7_4_CUSTOM: Response dispatched to Protocomm: {"status": "OK", "ack_id": "ACK_67030249_04", "msg": "Telemetry config applied"}
 I (372077) protocomm: Outbuf successfully transmitted and freed by Protocomm layer.
-ตารางบันทึกผลการทดลอง
-สถานการณ์ทดสอบ
-ค่า PoP ที่ป้อน
-ผลลัพธ์บนแอปมือถือ
-ข้อความ Log ใน Serial Monitor
-1. ป้อน PoP ผิดพลาด
-wrong1234
-ขึ้นข้อความ Error / การจับคู่ล้มเหลว (Authentication Failed)
-[SECURITY ALERT]: INVALID PoP / Unauthorized Access!
-2. ป้อน PoP ถูกต้อง
-abcd1234
-เชื่อมต่อสำเร็จและปลดล็อกหน้าตั้งค่า Wi-Fi
-[SECURITY SUCCESS]: Valid PoP! Secured Session OK!
-3. ส่ง Custom Data
-abcd1234
-ได้รับข้อความตอบกลับ: {"status": "OK", "ack_id": "ACK_67030249_04", "msg": "Telemetry config applied"}
-[CUSTOM DATA RECEIVED]: {"user_id": "67030249", "device": "SmartSensor_Suwimon", "sample_rate": 500}
-
+ตารางบันทึกผลการทดลอง
+สถานการณ์ทดสอบ	ค่า PoP ที่ป้อน	ผลลัพธ์บนแอปมือถือ	ข้อความ Log ใน Serial Monitor
+1. ป้อน PoP ผิดพลาด	wrong1234	ขึ้นข้อความ Error / การจับคู่ล้มเหลว (Authentication Failed)	[SECURITY ALERT]: INVALID PoP / Unauthorized Access!
+2. ป้อน PoP ถูกต้อง	abcd1234	เชื่อมต่อสำเร็จและปลดล็อกหน้าตั้งค่า Wi-Fi	[SECURITY SUCCESS]: Valid PoP! Secured Session OK!
+3. ส่ง Custom Data	abcd1234	ได้รับข้อความตอบกลับ: {"status": "OK", "ack_id": "ACK_67030249_04", "msg": "Telemetry config applied"}	[CUSTOM DATA RECEIVED]: {"user_id": "67030249", "device": "SmartSensor_Suwimon", "sample_rate": 500}
 คำถามท้ายการทดลอง
-การใช้ Proof-of-Possession (PoP) ช่วยป้องกันการโจมตีประเภทใดได้บ้าง?
-ตอบ: ช่วยป้องกันการถูกแย่งสิทธิ์ควบคุมอุปกรณ์ (Device Hijacking) จากผู้โจมตีที่สแกนเจอบลูทูธในระยะใกล้ และป้องกันการสอดแนมข้อมูล Wi-Fi Credentials ที่ส่งผ่านอากาศด้วยการเข้ารหัสแบบ AES-CTR
-หากไม่มีการใช้ PoP (เช่น ใน Security 0) ผู้โจมตีที่อยู่ในรัศมีสัญญาณบลูทูธสามารถทำสิ่งใดกับอุปกรณ์ได้บ้าง?
-ตอบ: สามารถทำ Packet Sniffing เพื่อดึงข้อมูลรหัสผ่านเครือข่ายออกไปได้โดยตรง และสามารถส่งคำขอเชื่อมต่อไปยังอุปกรณ์เพื่อสวมรอยเป็นผู้ดูแลระบบโดยไม่มีการตรวจสอบสิทธิ์ใดๆ
-ในการประยุกต์ใช้งานเชิงพาณิชย์จริง เราสามารถนำ Custom Data Endpoint ไปใช้ส่งข้อมูลประเภทใดได้อีกบ้าง (ยกตัวอย่าง 2 กรณี)?
-ตอบ: 1. ส่งข้อมูล Device Certificate หรือ Private Token สำหรับการยืนยันตัวตนระดับสูงกับระบบ IoT Core 2. ส่งค่า Geo-location Tag หรือ Room ID เพื่อระบุตำแหน่งติดตั้งของเซนเซอร์ในอาคาร
-ในฟังก์ชัน custom_prov_data_handler() เหตุใดหน่วยความจำที่จัดสรรให้ *outbuf จึงถูก Free โดย Protocomm Layer อัตโนมัติหลังจากส่งข้อมูลเสร็จ?
-ตอบ: เพราะการส่งข้อมูลต้องผ่านขั้นตอนการเข้ารหัสและการสร้างแพ็กเก็ตในเลเยอร์ที่อยู่สูงขึ้นไป ตัว Protocomm จึงจำเป็นต้องถือครองข้อมูลไว้จนกว่าจะส่งสำเร็จ การกำหนดให้ Protocomm เป็นผู้รับผิดชอบสั่ง free() ช่วยลดความซับซ้อนและป้องกัน Memory Leak ในตัวโค้ดของผู้พัฒนา
+1.	การใช้ Proof-of-Possession (PoP) ช่วยป้องกันการโจมตีประเภทใดได้บ้าง?
+-	ตอบ: ช่วยป้องกันการถูกแย่งสิทธิ์ควบคุมอุปกรณ์ (Device Hijacking) จากผู้โจมตีที่สแกนเจอบลูทูธในระยะใกล้ และป้องกันการสอดแนมข้อมูล Wi-Fi Credentials ที่ส่งผ่านอากาศด้วยการเข้ารหัสแบบ AES-CTR
+2.	หากไม่มีการใช้ PoP (เช่น ใน Security 0) ผู้โจมตีที่อยู่ในรัศมีสัญญาณบลูทูธสามารถทำสิ่งใดกับอุปกรณ์ได้บ้าง?
+-	ตอบ: สามารถทำ Packet Sniffing เพื่อดึงข้อมูลรหัสผ่านเครือข่ายออกไปได้โดยตรง และสามารถส่งคำขอเชื่อมต่อไปยังอุปกรณ์เพื่อสวมรอยเป็นผู้ดูแลระบบโดยไม่มีการตรวจสอบสิทธิ์ใดๆ
+3.	ในการประยุกต์ใช้งานเชิงพาณิชย์จริง เราสามารถนำ Custom Data Endpoint ไปใช้ส่งข้อมูลประเภทใดได้อีกบ้าง (ยกตัวอย่าง 2 กรณี)?
+-	ตอบ: 1. ส่งข้อมูล Device Certificate หรือ Private Token สำหรับการยืนยันตัวตนระดับสูงกับระบบ IoT Core 2. ส่งค่า Geo-location Tag หรือ Room ID เพื่อระบุตำแหน่งติดตั้งของเซนเซอร์ในอาคาร
+4.	ในฟังก์ชัน custom_prov_data_handler() เหตุใดหน่วยความจำที่จัดสรรให้ *outbuf จึงถูก Free โดย Protocomm Layer อัตโนมัติหลังจากส่งข้อมูลเสร็จ?
+-	ตอบ: เพราะการส่งข้อมูลต้องผ่านขั้นตอนการเข้ารหัสและการสร้างแพ็กเก็ตในเลเยอร์ที่อยู่สูงขึ้นไป ตัว Protocomm จึงจำเป็นต้องถือครองข้อมูลไว้จนกว่าจะส่งสำเร็จ การกำหนดให้ Protocomm เป็นผู้รับผิดชอบสั่ง free() ช่วยลดความซับซ้อนและป้องกัน Memory Leak ในตัวโค้ดของผู้พัฒนา
