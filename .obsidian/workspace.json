@@ -1,0 +1,226 @@
+{
+  "main": {
+    "id": "733b290ee85bf5d8",
+    "type": "split",
+    "children": [
+      {
+        "id": "709fe9b73224109d",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "923de345486b0df1",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Readme.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Readme"
+            }
+          },
+          {
+            "id": "10b857ce0e4f2789",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "67030338/Report-Labsheet01-04.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Report-Labsheet01-04"
+            }
+          }
+        ],
+        "currentTab": 1
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "1b7b7946965a4a72",
+    "type": "split",
+    "children": [
+      {
+        "id": "fd4ccf798fd256aa",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "3180e864fef39548",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "0afca6271f7c84eb",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "6753dcc0fbe17523",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "dc379caa576fb931",
+    "type": "split",
+    "children": [
+      {
+        "id": "e55ad39f5ed1bfa2",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "2046ba7531ff7f06",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "67030338/Report-Labsheet01-04.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks"
+            }
+          },
+          {
+            "id": "c64e649543e4a5b5",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "67030338/Report-Labsheet01-04.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links"
+            }
+          },
+          {
+            "id": "9c8744c5c7a6c04a",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "baad62096591a7fa",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          },
+          {
+            "id": "15e9954ef0d88f05",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "67030338/Report-Labsheet01-04.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
+    }
+  },
+  "active": "10b857ce0e4f2789",
+  "lastOpenFiles": [
+    "09-Labsheet-07-4-Security-Schemes-and-Custom-Data.md",
+    "67030338/Report-Labsheet01-04.md",
+    "Example_codes/Lab7-4-Custom-Data-and-Security/build/log/idf_py_stdout_output_352804",
+    "Example_codes/Lab7-4-Custom-Data-and-Security/build/log/idf_py_stderr_output_352804",
+    "Example_codes/Lab7-4-Custom-Data-and-Security/build/log/idf_py_stdout_output_351736",
+    "Example_codes/Lab7-4-Custom-Data-and-Security/build/log/idf_py_stderr_output_351736",
+    "Example_codes/Lab7-4-Custom-Data-and-Security/build/log/idf_py_stdout_output_348636",
+    "Example_codes/Lab7-4-Custom-Data-and-Security/build/log/idf_py_stderr_output_348636",
+    "Example_codes/Lab7-4-Custom-Data-and-Security/build/log/idf_py_stdout_output_349768",
+    "Example_codes/Lab7-4-Custom-Data-and-Security/build/log/idf_py_stderr_output_349768",
+    "Example_codes/Lab7-4-Custom-Data-and-Security/build/log/idf_py_stdout_output_350028",
+    "Example_codes/Lab7-4-Custom-Data-and-Security/build/log/idf_py_stderr_output_350028",
+    "08-Labsheet-07-3-BLE-Provisioning-and-GATT-Forensics.md",
+    "07-Labsheet-07-2-SoftAP-Provisioning-and-HTTP-Sniffing.md",
+    "06-Labsheet-07-1-Reset-Mechanisms-and-NVS-Forensics.md",
+    "Readme.md",
+    "01-WiFi-Provisioning-Architecture-and-Protocomm.md"
+  ]
+}

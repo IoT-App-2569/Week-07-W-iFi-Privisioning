@@ -54,7 +54,7 @@
    ```
 4. ทำการ Flash โปรแกรมและเปิด Serial Monitor:
    ```powershell
-   idf.py -p COM24 flash monitor
+   idf.py -p COM5 flash monitor
    ```
 5. สังเกต Log ว่า ESP32 จะรายงานสถานะ `"Starting provisioning"` และสร้าง QR Code ขึ้นมาบนหน้าจอ
 
