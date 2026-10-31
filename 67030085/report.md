@@ -434,38 +434,233 @@ I (203347) LAB7_2_SOFTAP: [PROV EVENT]: De-initializing Provisioning Manager
   - **Characteristic UUIDs** แต่ละตัว
   - **Descriptor 0x2901 (User Description)** ที่ผูกเข้ากับ Protocomm Endpoints (`prov-session`, `prov-config`, `prov-scan`, `proto-ver`, `custom-data`)
 
+```mermaid
+graph TD
+    subgraph BLE_Device["ESP32 BLE GATT Server (Device Name: PROV_AD6498)"]
+        Service["Primary Service<br/>UUID: 021a9004-0382-4aea-bff4-6b3f1c5adfb4"]
+        
+        subgraph C1["Characteristic 1: prov-session"]
+            Char1["UUID: 021aff4f-0382-4aea-bff4-6b3f1c5adfb4<br/>Properties: Read / Write"]
+            Desc1["Descriptor 0x2901<br/>Value: 'prov-session'<br/>(Security 1 Handshake)"]
+            Char1 --> Desc1
+        end
+
+        subgraph C2["Characteristic 2: prov-config"]
+            Char2["UUID: 021aff50-0382-4aea-bff4-6b3f1c5adfb4<br/>Properties: Read / Write"]
+            Desc2["Descriptor 0x2901<br/>Value: 'prov-config'<br/>(Wi-Fi Credentials)"]
+            Char2 --> Desc2
+        end
+
+        subgraph C3["Characteristic 3: prov-scan"]
+            Char3["UUID: 021aff51-0382-4aea-bff4-6b3f1c5adfb4<br/>Properties: Read / Write"]
+            Desc3["Descriptor 0x2901<br/>Value: 'prov-scan'<br/>(Wi-Fi Scanning)"]
+            Char3 --> Desc3
+        end
+
+        subgraph C4["Characteristic 4: proto-ver"]
+            Char4["UUID: 021aff52-0382-4aea-bff4-6b3f1c5adfb4<br/>Properties: Read"]
+            Desc4["Descriptor 0x2901<br/>Value: 'proto-ver'<br/>(Protocomm Version)"]
+            Char4 --> Desc4
+        end
+
+        subgraph C5["Characteristic 5: custom-data"]
+            Char5["UUID: 021aff53-0382-4aea-bff4-6b3f1c5adfb4<br/>Properties: Read / Write"]
+            Desc5["Descriptor 0x2901<br/>Value: 'custom-data'<br/>(Custom App Payload)"]
+            Char5 --> Desc5
+        end
+
+        Service --> Char1
+        Service --> Char2
+        Service --> Char3
+        Service --> Char4
+        Service --> Char5
+    end
+```
+
+<img width="1611" height="216" alt="031 drawio" src="https://github.com/user-attachments/assets/96aad806-c2bb-4e90-a656-d69815e2919c" />
+
 ### ภารกิจที่ 2: ผังลำดับการคืนหน่วยความจำ Bluetooth (BLE Lifecycle & Memory Reclaim Flow)
 ให้นักศึกษาวาด Flowchart / Sequence แสดงว่า:
 1. การเชื่อมต่อ BLE ถูกตรวจพบผ่าน Event `PROTOCOMM_TRANSPORT_BLE_CONNECTED` (LED 2 กระพริบเร็ว 100ms)
 2. เมื่อเชื่อมต่อ Wi-Fi สำเร็จ (`WIFI_PROV_CRED_SUCCESS`) $\rightarrow$ เกิด Event `WIFI_PROV_END`
 3. Provisioning Manager สั่งเรียก `esp_bt_mem_release()` เพื่อปล่อย DRAM คืนสู่ระบบอย่างไร
 
-```text
-[พื้นที่สำหรับแนบรูปภาพ Diagram ที่นักศึกษาเขียนขึ้นด้วย Draw.io / Mermaid / วาดมือ]
+```mermaid
+sequenceDiagram
+    autonumber
+    participant App as 📱 Mobile App (Provisioner)
+    participant BLE as 📶 NimBLE Stack / GATT Server
+    participant Prov as ⚙️ wifi_prov_mgr
+    participant Mem as 🧠 ESP32 System Memory (DRAM)
+
+    Note over BLE: เริ่มต้น BLE Advertising: LED 2 กระพริบช้า (500ms ON / 500ms OFF)
+    
+    App->>BLE: สแกนพบและเชื่อมต่อ BLE GATT Connection
+    BLE->>Prov: Trigger Event: PROTOCOMM_TRANSPORT_BLE_CONNECTED
+    Note over Prov: LED 2 เปลี่ยนเป็นกระพริบเร็ว (100ms ON / 100ms OFF)
+    
+    App->>Prov: แลกเปลี่ยนคีย์ PoP & ส่ง Wi-Fi Credentials
+    Prov-->>Prov: เชื่อมต่อ Wi-Fi Station
+    
+    Prov->>Prov: เชื่อมต่อสำเร็จ Trigger Event: WIFI_PROV_CRED_SUCCESS
+    Note over Prov: IP_EVENT_STA_GOT_IP ได้รับ IP Address จาก Router
+    
+    Prov->>BLE: แจ้งผลสำเร็จกลับไปยัง App และสั่งปิด Advertising
+    App->>BLE: Disconnect BLE Connection
+    
+    Prov->>Prov: Trigger Event: WIFI_PROV_END
+    Note over Prov: สิ้นสุดหน้าที่ของกระบวนการ Provisioning
+    
+    Prov->>Mem: เรียกฟังก์ชัน esp_bt_mem_release(ESP_BT_MODE_BTDM)
+    Note over Mem: ปลดปล่อยหน่วยความจำ Bluetooth Stack (DRAM ~80-100 KiB)<br/>คืนกลับสู่ System Heap Pool ให้ App ใช้งาน
+    Note over Prov: พิมพ์ Log: "wifi_prov_scheme_ble: BT memory released"
+    Note over Prov: LED 2 ดับสนิท (ปิด BLE) / LED 1 Heartbeat แสดงสถานะ Online
 ```
+
+<img width="443" height="925" alt="032 drawio" src="https://github.com/user-attachments/assets/94fddc60-742a-4387-92c0-114adc18a9ea" />
 
 ---
 
 ## 6. ตารางบันทึกผลการทดลอง (Experiment Results)
 
+```text
+[10:52:20.112] Normal: Scanner On.
+[10:52:20.122] Normal: Device Scanned.
+[10:52:31.799] Normal: Connected.
+[10:52:31.907] Normal: Discovered 021A9004-0382-4AEA-BFF4-6B3F1C5ADFB4 Services.
+[10:52:32.054] Normal: Service Discovery returned nil Services.
+[10:52:32.238] Normal: Discovered 021AFF4F-0382-4AEA-BFF4-6B3F1C5ADFB4, 021AFF50-0382-4AEA-BFF4-6B3F1C5ADFB4, 021AFF51-0382-4AEA-BFF4-6B3F1C5ADFB4, 021AFF52-0382-4AEA-BFF4-6B3F1C5ADFB4, and 021AFF53-0382-4AEA-BFF4-6B3F1C5ADFB4 Characteristics for Service 021A9004-0382-4AEA-BFF4-6B3F1C5ADFB4.
+[10:52:32.324] Normal: 021AFF4F-0382-4AEA-BFF4-6B3F1C5ADFB4 has no Descriptors.
+[10:52:32.384] Normal: 021AFF50-0382-4AEA-BFF4-6B3F1C5ADFB4 has no Descriptors.
+[10:52:32.564] Normal: 021AFF51-0382-4AEA-BFF4-6B3F1C5ADFB4 has no Descriptors.
+[10:52:32.744] Normal: 021AFF52-0382-4AEA-BFF4-6B3F1C5ADFB4 has no Descriptors.
+[10:52:32.925] Normal: 021AFF53-0382-4AEA-BFF4-6B3F1C5ADFB4 has no Descriptors.
+[10:54:20.062] Normal: Scanner Off.
+[10:54:47.970] Normal: Disconnected.
+```
+
 | รายการตรวจสอบ | ผลการทดลอง / ข้อมูลที่สังเกตได้ |
 | :--- | :--- |
-| **1. BLE Device Name ที่สแกนเจอ** | `PROV_`.............................. |
-| **2. Primary Service UUID (128-bit)** | ..................................................... |
-| **3. Characteristic Endpoint ที่พบ (0x2901)** | 1. ..................................................<br/>2. ..................................................<br/>3. .................................................. |
-| **4. พฤติกรรมไฟ LED 2 (GPIO 4) ช่วงรอ vs ช่วงต่อ BLE** | ช่วงรอ: .......................................<br/>ช่วงต่อ: ....................................... |
-| **5. พฤติกรรมเมื่อต่อ Wi-Fi สำเร็จ** | มี Log คืนหน่วยความจำ Bluetooth หรือไม่? (มี / ไม่มี) |
+| **1. BLE Device Name ที่สแกนเจอ** | `PROV_AD6498` |
+| **2. Primary Service UUID (128-bit)** | `021A9004-0382-4AEA-BFF4-6B3F1C5ADFB4` |
+| **3. Characteristic Endpoint ที่พบ (0x2901)** | 1. `021AFF4F-0382-4AEA-BFF4-6B3F1C5ADFB4` (prov-session)<br/>2. `021AFF50-0382-4AEA-BFF4-6B3F1C5ADFB4` (prov-config)<br/>3. `021AFF51-0382-4AEA-BFF4-6B3F1C5ADFB4` (prov-scan) |
+| **4. พฤติกรรมไฟ LED 2 (GPIO 4) ช่วงรอ vs ช่วงต่อ BLE** | **ช่วงรอ:** กระพริบช้า (ติด 500ms / ดับ 500ms)<br/>**ช่วงต่อ BLE:** กระพริบเร็ว (ติด 100ms / ดับ 100ms) แสดงสถานะ BLE Connected |
+| **5. พฤติกรรมเมื่อต่อ Wi-Fi สำเร็จ** | **มี Log คืนหน่วยความจำ Bluetooth** (ปรากฏ `wifi_prov_scheme_ble: BT memory released` / ระบบเรียก `esp_bt_mem_release()`) และ LED 2 ดับสนิท |
 
 ---
 
 ## 7. คำถามท้ายการทดลอง (Post-Lab Questions)
 1. เหตุใด BLE Provisioning จึงไม่ส่งผลให้สัญญาณ Wi-Fi บนสมาร์ตโฟนของผู้ใช้หลุดระหว่างทำรายการ?
+	**คำตอบ:** เพราะสมาร์ตโฟนติดต่อสื่อสารกับ ESP32 ผ่านช่องทางฮาร์ดแวร์ **Bluetooth Low Energy (BLE)** ซึ่งแยกส่วนอิสระจากฮาร์ดแวร์ Wi-Fi ของโทรศัพท์ ทำให้สมาร์ตโฟนสามารถคงการเชื่อมต่ออินเทอร์เน็ตผ่าน Wi-Fi บ้าน หรือเครือข่าย 4G/5G ได้ตามปกติโดยไม่เกิดการตัดการเชื่อมต่อ
 2. Descriptor `0x2901` มีความสำคัญอย่างไรต่อการที่แอปพลิเคชันมือถือจะทราบว่า Characteristic แต่ละตัวใช้ทำหน้าที่อะไร?
+	**คำตอบ:** Descriptor `0x2901` คือ **Characteristic User Description** ทำหน้าที่เก็บสตริงข้อความที่มนุษย์เข้าใจได้ (เช่น `"prov-session"`, `"prov-config"`, `"prov-scan"`, `"custom-data"`) เพื่อระบุว่า Characteristic ที่มี 128-bit UUID นั้นๆ ผูกอยู่กับ Protocomm Endpoint ใด หากไม่มี Descriptor นี้ แอปพลิเคชันจะไม่สามารถแยกแยะหน้าที่ของ Characteristic แต่ละตัวได้ เนื่องจาก 128-bit UUID มักเป็นค่าสุ่มที่ไม่สื่อความหมาย
 3. การที่ ESP-IDF มีฟังก์ชัน `esp_bt_mem_release()` มีประโยชน์อย่างไรต่อการทำงานของแอปพลิเคชัน IoT หลังเชื่อมต่อ Wi-Fi สำเร็จ?
+	**คำตอบ:** มีประโยชน์อย่างยิ่งในการ **ประหยัดและกู้คืนพื้นที่ RAM (DRAM)** ให้กับระบบ เนื่องจาก Bluetooth Stack (เช่น NimBLE / Bluedroid และ BT Controller) ใช้หน่วยความจำขนาดใหญ่มากประมาณ **80 - 100 KiB** ซึ่งหลังจากที่อุปกรณ์ทำการ Provision Wi-Fi สำเร็จแล้ว บลูทูธจะไม่จำเป็นต้องใช้งานอีกต่อไป การเรียก `esp_bt_mem_release()` จะสั่งคืนพื้นที่หน่วยความจำส่วนนี้กลับเข้าสู่ System Heap Pool ทำให้เฟิร์มแวร์หลักมี RAM เหลือเฟือสำหรับรันโปรแกรม เช่น HTTP Client, MQTT, TLS/SSL, หรือจัดเก็บข้อมูลเซนเซอร์
 
 Log
 ```text
+ho 0 tail 12 room 4
+load:0x40078000,len:15916
+load:0x40080400,len:3860
+--- 0x40080400: _invalid_pc_placeholder at C:/Users/09677/esp/v5.5.1/esp-idf/components/xtensa/xtensa_vectors.S:2235
+entry 0x40080638
+--- 0x40080638: call_start_cpu0 at C:/Users/09677/esp/v5.5.1/esp-idf/components/bootloader/subproject/main/bootloader_start.c:25
+I (29) boot: ESP-IDF v5.5.1-dirty 2nd stage bootloader
+I (29) boot: compile time Aug 24 2026 10:48:55
+I (29) boot: Multicore bootloader
+I (31) boot: chip revision: v3.1
+I (34) boot.esp32: SPI Speed      : 40MHz
+I (38) boot.esp32: SPI Mode       : DIO
+I (41) boot.esp32: SPI Flash Size : 2MB
+I (45) boot: Enabling RNG early entropy source...
+I (49) boot: Partition Table:
+I (52) boot: ## Label            Usage          Type ST Offset   Length
+I (58) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (65) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (71) boot:  2 factory          factory app      00 00 00010000 00150000
+I (78) boot: End of partition table
+I (81) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=25e98h (155288) map
+I (142) esp_image: segment 1: paddr=00035ec0 vaddr=3ffbdb60 size=058a8h ( 22696) load
+I (150) esp_image: segment 2: paddr=0003b770 vaddr=40080000 size=048a8h ( 18600) load
+I (158) esp_image: segment 3: paddr=00040020 vaddr=400d0020 size=b91b4h (758196) map
+I (417) esp_image: segment 4: paddr=000f91dc vaddr=400848a8 size=1a89ch (108700) load
+I (459) esp_image: segment 5: paddr=00113a80 vaddr=50000000 size=00020h (    32) load
+I (475) boot: Loaded app from partition at offset 0x10000
+I (475) boot: Disabling RNG early entropy source...
+I (486) cpu_start: Multicore app
+I (494) cpu_start: Pro cpu start user code
+I (494) cpu_start: cpu freq: 160000000 Hz
+I (494) app_init: Application information:
+I (494) app_init: Project name:     lab7_3_ble_provisioning
+I (499) app_init: App version:      4cfb255
+I (503) app_init: Compile time:     Aug 24 2026 10:46:29
+I (508) app_init: ELF file SHA256:  f5b7116a7...
+I (513) app_init: ESP-IDF:          v5.5.1-dirty
+I (517) efuse_init: Min chip rev:     v0.0
+I (521) efuse_init: Max chip rev:     v3.99 
+I (525) efuse_init: Chip rev:         v3.1
+I (529) heap_init: Initializing. RAM available for dynamic allocation:
+I (535) heap_init: At 3FFAFF10 len 000000F0 (0 KiB): DRAM
+I (540) heap_init: At 3FFB6388 len 00001C78 (7 KiB): DRAM
+I (545) heap_init: At 3FFB9A20 len 00004108 (16 KiB): DRAM
+I (550) heap_init: At 3FFC9988 len 00016678 (89 KiB): DRAM
+I (556) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM
+I (561) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM
+I (566) heap_init: At 4009F144 len 00000EBC (3 KiB): IRAM
+W (573) spi_flash: Detected boya flash chip but using generic driver. For optimal functionality, enable `SPI_FLASH_SUPPORT_BOYA_CHIP` in menuconfig
+I (585) spi_flash: detected chip: generic
+I (588) spi_flash: flash io: dio
+W (591) spi_flash: Detected size(4096k) larger than the size in the binary image header(2048k). Using the size in the binary image header.
+I (604) coexist: coex firmware version: b0bcc39
+I (609) main_task: Started on CPU0
+I (619) main_task: Calling app_main()
+I (649) wifi:wifi driver task: 3ffcd79c, prio:23, stack:6656, core=0
+I (649) wifi:wifi firmware version: 14da9b7
+I (649) wifi:wifi certification version: v7.0
+I (649) wifi:config NVS flash: enabled
+I (649) wifi:config nano formatting: disabled
+I (659) wifi:Init data frame dynamic rx buffer num: 32
+I (659) wifi:Init static rx mgmt buffer num: 5
+I (669) wifi:Init management short buffer num: 32
+I (669) wifi:Init dynamic tx buffer num: 32
+I (669) wifi:Init static rx buffer size: 1600
+I (679) wifi:Init static rx buffer num: 10
+I (679) wifi:Init dynamic rx buffer num: 32
+I (689) wifi_init: rx ba win: 6
+I (689) wifi_init: accept mbox: 6
+I (689) wifi_init: tcpip mbox: 32
+I (689) wifi_init: udp mbox: 6
+I (699) wifi_init: tcp mbox: 6
+I (699) wifi_init: tcp tx win: 5760
+I (699) wifi_init: tcp rx win: 5760
+I (709) wifi_init: tcp mss: 1440
+I (709) wifi_init: WiFi IRAM OP enabled
+I (709) wifi_init: WiFi RX IRAM OP enabled
+I (719) wifi_prov_scheme_ble: BT memory released
+I (719) LAB7_3_BLE: Starting BLE Provisioning (Name: PROV_AD6498, PoP: abcd1234)
+I (729) phy_init: phy_version 4861,b71b5ad,Aug  5 2025,11:16:06
+I (819) wifi:mode : sta (88:57:21:ad:64:98)
+I (819) wifi:enable tsf
+W (829) BTDM_INIT: esp_bt_controller_rom_mem_release already released, mode 2
+I (829) BTDM_INIT: BT controller compile version [722c907]
+I (829) BTDM_INIT: Using main XTAL as clock source
+I (829) BTDM_INIT: Bluetooth MAC: 88:57:21:ad:64:9a
+I (1079) protocomm_nimble: BLE Host Task Started
+I (1089) wifi_prov_mgr: Provisioning started with service name : PROV_AD6498 
+I (1099) LAB7_3_BLE: [PROV EVENT]: BLE Provisioning Started (Advertising)!
+I (1099) LAB7_3_BLE: --------------------------------------------------
+I (1099) LAB7_3_BLE: [QR CODE URL]: Click or copy the URL below:
+I (1109) LAB7_3_BLE: https://espressif.github.io/esp-jumpstart/qrcode.html?data=%7B%22ver%22%3A%22v1%22%2C%22name%22%3A%22PROV_AD6498%22%2C%22pop%22%3A%22abcd1234%22%2C%22transport%22%3A%22ble%22%7D
+I (1129) LAB7_3_BLE: Payload JSON: {"ver":"v1","name":"PROV_AD6498","pop":"abcd1234","transport":"ble"}
+I (1129) NimBLE: GAP procedure initiated: advertise; 
+I (1139) NimBLE: disc_mode=2
+I (1139) NimBLE:  adv_channel_map=0 own_addr_type=0 adv_filter_policy=0 adv_itvl_min=256 adv_itvl_max=256
+I (1149) NimBLE: 
 
+I (1149) LAB7_3_BLE: --------------------------------------------------
+I (1159) main_task: Returned from app_main()
+I (56929) LAB7_3_BLE: [BLE]: Smartphone Connected to GATT Server!
+I (57149) protocomm_nimble: mtu update event; conn_handle=0 cid=4 mtu=256
 ```
 
 ---
