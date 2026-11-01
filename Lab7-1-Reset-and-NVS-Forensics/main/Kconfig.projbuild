@@ -1,0 +1,10 @@
+menu "Example Configuration"
+
+    config EXAMPLE_RESET_PROVISIONED
+        bool "Reset Provisioned state (Erase credentials)"
+        default n
+        help
+            If set, the device will erase all provisioning credentials from NVS
+            on every boot, forcing it to enter provisioning mode.
+
+endmenu
