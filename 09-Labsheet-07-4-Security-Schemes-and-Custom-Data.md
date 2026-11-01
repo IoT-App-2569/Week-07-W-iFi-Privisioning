@@ -141,6 +141,7 @@ wifi_prov_mgr_endpoint_register("custom-data", custom_prov_data_handler, NULL);
 3. จุดแยกทางเลือก (Branching):
    - หาก PoP ไม่ตรง $\rightarrow$ Trigger Event `PROTOCOMM_SECURITY_SESSION_CREDENTIALS_MISMATCH` และปฏิเสธการเชื่อมต่อ
    - หาก PoP ถูกต้อง $\rightarrow$ Trigger Event `PROTOCOMM_SECURITY_SESSION_SETUP_OK` และสร้าง AES Session Key สำเร็จ
+<img width="1188" height="2032" alt="mermaid-diagram (5)" src="https://github.com/user-attachments/assets/11958095-7070-4d21-9f81-acb36aafc1cc" />
 
 ### ภารกิจที่ 2: ผังการรับส่งข้อมูลผ่าน Custom Endpoint (Custom Data Handler Flow)
 ให้นักศึกษาวาด Sequence / Data Flow ของฟังก์ชัน `custom_prov_data_handler()`:
@@ -148,10 +149,10 @@ wifi_prov_mgr_endpoint_register("custom-data", custom_prov_data_handler, NULL);
 2. การพิมพ์ข้อความ Log ด้วย `ESP_LOGI()`
 3. การจัดสรรหน่วยความจำแบบไดนามิกด้วย `strdup()` ให้กับ `*outbuf`
 4. ทำไมตัวแปร `*outbuf` จึงต้องจัดสรรใน Heap Memory (ทำไมจึงใช้ตัวแปร Local Static Array ธรรมดาไม่ได้)?
+ตอบ: เพราะฟังก์ชันต้องส่งข้อมูลกลับไปให้ Protocomm ใช้งานหลังจากฟังก์ชันทำงานเสร็จแล้ว หากใช้ตัวแปร Local Array ทั่วไป หน่วยความจำอาจหมดอายุเมื่อออกจากฟังก์ชัน ทำให้เกิดปัญหาในการเข้าถึงข้อมูล จึงใช้ strdup() เพื่อจองหน่วยความจำใน Heap และให้ Protocomm จัดการคืนหน่วยความจำหลังส่งข้อมูลเสร็จตามรูปแบบการทำงานของ API
 
-```text
-[พื้นที่สำหรับแนบรูปภาพ Diagram ที่นักศึกษาเขียนขึ้นด้วย Draw.io / Mermaid / วาดมือ]
-```
+<img width="1098" height="2616" alt="mermaid-diagram (6)" src="https://github.com/user-attachments/assets/fb330ea1-2570-4e70-9169-0400c9cc5868" />
+
 
 ---
 
@@ -166,8 +167,20 @@ wifi_prov_mgr_endpoint_register("custom-data", custom_prov_data_handler, NULL);
 ---
 
 ## 8. คำถามท้ายการทดลอง (Post-Lab Questions)
-1. การใช้ **Proof-of-Possession (PoP)** ช่วยป้องกันการโจมตีประเภทใดได้บ้าง?
+1. การใช้ Proof-of-Possession (PoP) ช่วยป้องกันการโจมตีประเภทใดได้บ้าง?
+
+ตอบ: ช่วยป้องกันผู้ที่ไม่ได้รับอนุญาตเข้ามาตั้งค่าอุปกรณ์ หรือการโจมตีแบบสวมรอย โดยผู้ใช้งานต้องมีรหัส PoP ที่ถูกต้องก่อนจึงจะสร้าง Secure Session ได้
+
 2. หากไม่มีการใช้ PoP (เช่น ใน Security 0) ผู้โจมตีที่อยู่ในรัศมีสัญญาณบลูทูธสามารถทำสิ่งใดกับอุปกรณ์ได้บ้าง?
-3. ในการประยุกต์ใช้งานเชิงพาณิชย์จริง เราสามารถนำ **Custom Data Endpoint** ไปใช้ส่งข้อมูลประเภทใดได้อีกบ้าง (ยกตัวอย่าง 2 กรณี)?
-4. ในฟังก์ชัน `custom_prov_data_handler()` เหตุใดหน่วยความจำที่จัดสรรให้ `*outbuf` จึงถูก Free โดย Protocomm Layer อัตโนมัติหลังจากส่งข้อมูลเสร็จ?
+
+ตอบ: ผู้ที่อยู่ในระยะสัญญาณอาจเชื่อมต่อกับ ESP32 และส่งข้อมูลตั้งค่า Wi-Fi ของตนเองได้ ทำให้สามารถเปลี่ยนเครือข่ายที่อุปกรณ์เชื่อมต่ออยู่ หรือเข้าควบคุมการตั้งค่า Provisioning ได้ง่ายขึ้น
+
+3. ในการประยุกต์ใช้งานเชิงพาณิชย์จริง เราสามารถนำ Custom Data Endpoint ไปใช้ส่งข้อมูลประเภทใดได้อีกบ้าง (ยกตัวอย่าง 2 กรณี)?
+
+ตอบ:
+- ส่ง Device ID หรือ Activation Code เพื่อใช้ลงทะเบียนและเปิดใช้งานอุปกรณ์
+- ส่ง MQTT Broker URL เพื่อกำหนด Server ที่อุปกรณ์ต้องใช้ในการรับส่งข้อมูล
+4. ในฟังก์ชัน custom_prov_data_handler() เหตุใดหน่วยความจำที่จัดสรรให้ *outbuf จึงถูก Free โดย Protocomm Layer อัตโนมัติหลังจากส่งข้อมูลเสร็จ?
+
+ตอบ: เพราะ Protocomm เป็นผู้จัดการกระบวนการรับส่งข้อมูล และรับผิดชอบหน่วยความจำของ Buffer ที่ Handler ส่งกลับมา เมื่อส่งข้อมูลเสร็จจึงคืนหน่วยความจำเพื่อป้องกันการใช้ RAM โดยไม่จำเป็นและลดปัญหาหน่วยความจำรั่ว (Memory Leak)
 
