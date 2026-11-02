@@ -1,5 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+idf_component_register(SRCS "main.c"
+                        PRIV_REQUIRES esp_wifi nvs_flash wifi_provisioning driver
+                        INCLUDE_DIRS ".")
 
-include($ENV{IDF_PATH}/tools/cmake/project.cmake)
-
-project(wifi_softap_tracking)
