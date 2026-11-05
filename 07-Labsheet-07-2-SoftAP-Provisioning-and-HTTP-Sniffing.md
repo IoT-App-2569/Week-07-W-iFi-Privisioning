@@ -24,27 +24,8 @@
 
 ## 3. สถาปัตยกรรมและแผนภาพลำดับเหตุการณ์ (Sequence Diagram)
 
-```mermaid
-sequenceDiagram
-    autonumber
-    participant App as 📱 Mobile App (ESP SoftAP Prov)
-    participant ESP as ⚡ ESP32 (SoftAP Mode)
-    participant Router as 📡 Home/Lab Router AP
-
-    Note over ESP: เริ่มต้น SoftAP SSID: PROV_XXXXXX<br/>IP: 192.168.4.1
-    App->>ESP: เชื่อมต่อ Wi-Fi SSID: PROV_XXXXXX
-    App->>ESP: HTTP POST /prov-session (Security Handshake + PoP: abcd1234)
-    ESP-->>App: HTTP 200 OK (Secured Session Ready)
-    
-    App->>ESP: HTTP POST /prov-scan (สั่ง ESP32 สแกนหา Wi-Fi รอบตัว)
-    ESP-->>App: รายชื่อ Wi-Fi SSIDs + ค่า RSSI
-    
-    App->>ESP: HTTP POST /prov-config (ส่ง SSID เป้าหมาย + รหัสผ่าน)
-    ESP->>Router: ทดลองเชื่อมต่อไปยัง Router
-    Router-->>ESP: เชื่อมต่อสำเร็จ ได้รับ IP Address
-    ESP-->>App: HTTP 200 OK (Provisioning Success)
-    Note over ESP: ปิด SoftAP และเริ่มทำงานในโหมด Station ต่อเนื่อง
-```
+<p align="center"><img src="Fig_07-Labsheet-07-2-SoftAP-Provisioning-and-HTTP-Sniffing_2026-10-25T10-45-51_academic.svg" alt="07-Labsheet-07-2-SoftAP-Provisioning-and-HTTP-Sniffing" width="800" style="max-width: 800px; width: 100%; height: auto;" ></p>
+<p align="center"><b></b>สถาปัตยกรรมและแผนภาพลำดับเหตุการณ์ (Sequence Diagram)</p>
 
 ---
 
