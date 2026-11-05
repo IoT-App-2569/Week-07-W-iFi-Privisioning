@@ -188,11 +188,13 @@ void app_main(void)
 
 ## 6. ตารางบันทึกผลการทดลอง (Experiment Results)
 
+> **หมายเหตุ:** ค่าในตารางนี้เป็นผลที่คาดการณ์จากโค้ดและใบงาน ยังไม่ได้วัดจากบอร์ดจริง
+
 | รูปแบบการ Reset                  | คำสั่ง / พฤติกรรมที่ทำ               | พฤติกรรมของ LED แต่ละดวงหลังเปิดเครื่อง | สถานะใน Serial Monitor |
 | :------------------------------- | :----------------------------------- | :-------------------------------------- | :--------------------- |
-| **1. CLI Erase**                 | `idf.py erase-flash`                 |                                         |                        |
-| **2. Menuconfig Flag**           | `CONFIG_EXAMPLE_RESET_PROVISIONED=y` |                                         |                        |
-| **3. Hardware Button (GPIO 18)** | กดปุ่ม GPIO 18 ค้าง 3 วินาที         |                                         |                        |
+| **1. CLI Erase**                 | `idf.py erase-flash`                 | LED 1 ดับ (ต้องแฟลชใหม่ก่อนดูผล) | NVS ว่าง: NOT provisioned |
+| **2. Menuconfig Flag**           | `CONFIG_EXAMPLE_RESET_PROVISIONED=y` | LED 1 ดับ | ถูกล้างทุกครั้งที่บูต: NOT provisioned |
+| **3. Hardware Button (GPIO 18)** | กดปุ่ม GPIO 18 ค้าง 3 วินาที         | LED 1 ดับหลังล้าง | ถูกล้างด้วย `nvs_flash_erase()`: NOT provisioned |
 
 ---
 

@@ -157,11 +157,13 @@ wifi_prov_mgr_endpoint_register("custom-data", custom_prov_data_handler, NULL);
 
 ## 7. ตารางบันทึกผลการทดลอง (Experiment Results)
 
+> **หมายเหตุ:** ค่าในตารางนี้เป็นผลที่คาดการณ์จากโค้ดและใบงาน ยังไม่ได้วัดจากบอร์ดจริง
+
 | สถานการณ์ทดสอบ | ค่า PoP ที่ป้อน | ผลลัพธ์บนแอปมือถือ | ข้อความ Log ใน Serial Monitor |
 | :--- | :--- | :--- | :--- |
-| **1. ป้อน PoP ผิดพลาด** | `wrong1234` | | |
-| **2. ป้อน PoP ถูกต้อง** | `abcd1234` | | |
-| **3. ส่ง Custom Data** | `TEST_DATA_999` | | |
+| **1. ป้อน PoP ผิดพลาด** | `wrong1234` | สร้าง Session ไม่สำเร็จ | `[SECURITY ALERT]: INVALID PoP / Unauthorized Access!` |
+| **2. ป้อน PoP ถูกต้อง** | `abcd1234` | ไปขั้นเลือก Wi-Fi ได้ | `[SECURITY SUCCESS]: Valid PoP! Secured Session OK!` |
+| **3. ส่ง Custom Data** | `TEST_DATA_999` | ได้รับ `ACK_FROM_ESP32_SUCCESS` | `[CUSTOM DATA RECEIVED]: TEST_DATA_999` |
 
 ---
 
