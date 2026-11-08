@@ -135,8 +135,7 @@ I (26120) app: Connected with IP Address: 192.168.1.155
 | **1. BLE Device Name ที่สแกนเจอ** | PROV_A1B2C3 |
 | **2. Primary Service UUID (128-bit)** | 021a9004-0382-4aea-bff4-6b3f1c5adfb4 |
 | **3. Characteristic Endpoint ที่พบ (0x2901)** | 1. prov-session 2. prov-config 3. prov-scan 4. proto-ver 5. custom-data |
-| **4. พฤติกรรมไฟ LED 2 (GPIO 4) ช่วงรอ vs ช่วงต่อ BLE** | 	ช่วงรอ: กระพริบช้า ๆ ทุก 1 วินาที
-ช่วงต่อ: กระพริบเร็วทุก 100 ms |
+| **4. พฤติกรรมไฟ LED 2 (GPIO 4) ช่วงรอ vs ช่วงต่อ BLE** | 	ช่วงรอ: กระพริบช้า ๆ ทุก 1 วินาทีช่วงต่อ: กระพริบเร็วทุก 100 ms |
 | **5. พฤติกรรมเมื่อต่อ Wi-Fi สำเร็จ** |มี Log คืนหน่วยความจำ Bluetooth หรือไม่? (มี) |
 
 ---
