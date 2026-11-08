@@ -175,10 +175,10 @@ void app_main(void)
 4. การเรียกฟังก์ชัน `wifi_prov_mgr_is_provisioned(&provisioned)`
 5. จุดแยกสายการทำงานเข้าสู่โหมด **Provisioning Mode** หรือ **Station Mode**
 
-```text
+``
 <img width="1150" height="2846" alt="mermaid-diagram" src="https://github.com/user-attachments/assets/502d1294-a8e1-4d37-ade7-5e21018510d8" />
 
-```
+``
 
 ### ภารกิจที่ 2 ผังสถานะการเปลี่ยนจังหวะไฟ LED 1 (Wi-Fi STA Indicator)
 ให้นักศึกษาวาด State Diagram แสดงการเปลี่ยนสถานะของ **LED 1 (GPIO 2)**:
