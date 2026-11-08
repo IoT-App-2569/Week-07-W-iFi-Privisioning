@@ -176,7 +176,8 @@ void app_main(void)
 5. จุดแยกสายการทำงานเข้าสู่โหมด **Provisioning Mode** หรือ **Station Mode**
 
 ```text
-[พื้นที่สำหรับแนบรูปภาพ Flowchart ที่นักศึกษาเขียนขึ้นด้วย Draw.io / Mermaid / วาดมือ]
+<img width="1150" height="2846" alt="mermaid-diagram" src="https://github.com/user-attachments/assets/502d1294-a8e1-4d37-ade7-5e21018510d8" />
+
 ```
 
 ### ภารกิจที่ 2 ผังสถานะการเปลี่ยนจังหวะไฟ LED 1 (Wi-Fi STA Indicator)
