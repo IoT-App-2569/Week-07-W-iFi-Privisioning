@@ -184,6 +184,7 @@ void app_main(void)
 ให้นักศึกษาวาด State Diagram แสดงการเปลี่ยนสถานะของ **LED 1 (GPIO 2)**:
 - เงื่อนไขใดทำให้ LED 1 เข้าสู่สถานะ `LED_STA_MODE_DISCONNECTED` (กระพริบ 200ms Mark / 200ms Space)
 - เงื่อนไขหรือ Event ใดทำให้เปลี่ยนเป็น `LED_STA_MODE_CONNECTED` (Heartbeat 200ms ทุก 1s)
+<img width="886" height="494" alt="mermaid-diagram (1)" src="https://github.com/user-attachments/assets/79fc1d9c-9e8c-46e3-8980-212c379d09aa" />
 
 ---
 
@@ -191,15 +192,20 @@ void app_main(void)
 
 | รูปแบบการ Reset                  | คำสั่ง / พฤติกรรมที่ทำ               | พฤติกรรมของ LED แต่ละดวงหลังเปิดเครื่อง | สถานะใน Serial Monitor |
 | :------------------------------- | :----------------------------------- | :-------------------------------------- | :--------------------- |
-| **1. CLI Erase**                 | `idf.py erase-flash`                 |                                         |                        |
-| **2. Menuconfig Flag**           | `CONFIG_EXAMPLE_RESET_PROVISIONED=y` |                                         |                        |
-| **3. Hardware Button (GPIO 18)** | กดปุ่ม GPIO 18 ค้าง 3 วินาที         |                                         |                        |
+| **1. CLI Erase**                 | `idf.py erase-flash`                 |  กลับเข้าสู่สถานะรอ Provisioning                                       |  Starting provisioning                      |
+| **2. Menuconfig Flag**           | `CONFIG_EXAMPLE_RESET_PROVISIONED=y` |  กลับเข้าสู่สถานะรอ Provisioning ทุกครั้งที่เปิดเครื่อง                                       |  Reset Provisioned state                      |
+| **3. Hardware Button (GPIO 18)** | กดปุ่ม GPIO 18 ค้าง 3 วินาที         |  กลับเข้าสู่สถานะรอ Provisioning                                       | FACTORY RESET TRIGGERED! ERASING NVS FLASH
+                       |
 
 ---
 
 ## 7. คำถามท้ายการทดลอง (Post-Lab Questions)
 1. เพราะเหตุใดการกดปุ่ม BOOT (GPIO 0) ค้างไว้ในจังหวะรีเซ็ตบอร์ด จึงทำให้โปรแกรมค้างอยู่ที่ ROM Bootloader และไม่ยอมทำงานต่อ?
+- เพราะ GPIO 0 เป็น Strapping Pin หากกดปุ่มค้างไว้จนขาเป็น LOW ในจังหวะรีเซ็ต ESP32 จะเข้าสู่โหมด ROM Download Bootloader เพื่อรอรับการแฟลชโปรแกรม ทำให้ไม่เข้าสู่การทำงานของ app_main()
 2. เพราะเหตุใดคำสั่ง `idf.py erase-flash` จึงทำให้ข้อมูลเฟิร์มแวร์ Application หายไปด้วย ในขณะที่ `nvs_flash_erase()` ไม่ทำให้เฟิร์มแวร์หาย?
+-  เพราะ idf.py erase-flash ล้างข้อมูล Flash ทั้งหมด รวมถึงเฟิร์มแวร์ Application ส่วน nvs_flash_erase() ล้างเฉพาะข้อมูลใน NVS Partition เช่น ข้อมูล Wi-Fi และค่าคอนฟิก จึงไม่กระทบกับเฟิร์มแวร์ที่อยู่ใน Partition อื่น
 3. การออกแบบปุ่ม Factory Reset บนอุปกรณ์ IoT เชิงพาณิชย์ เหตุใดจึงต้องกำหนดให้ผู้ใช้กดปุ่มค้างไว้ 3-5 วินาที แทนที่จะสั่งลบข้อมูลทันทีที่แตะปุ่มเพียงเสี้ยววินาที?
+-   เพื่อป้องกันการกดปุ่มโดยไม่ตั้งใจ เช่น การสัมผัสหรือการกระแทก และช่วยให้มั่นใจว่าผู้ใช้ต้องการรีเซ็ตอุปกรณ์จริง ๆ ก่อนที่ระบบจะลบข้อมูลการตั้งค่า
 4. หากอุปกรณ์ IoT ถูกติดตั้งอยู่บนเสาสูงหรือฝังอยู่ในผนัง วิธีการ Reset ทางกายภาพรูปแบบใดเหมาะสมที่สุด?
+- วรออกแบบปุ่ม Factory Reset ให้อยู่ในตำแหน่งที่เข้าถึงได้ผ่านช่องบริการ หรือใช้ปุ่มแม่เหล็กแบบไม่ต้องเปิดตัวเครื่อง เช่น Magnetic Reed Switch เพื่อสั่งรีเซ็ตจากภายนอก ช่วยให้รีเซ็ตได้สะดวกและไม่ต้องรื้ออุปกรณ์ 
 
